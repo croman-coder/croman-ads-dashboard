@@ -1,36 +1,61 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Croman Ads Dashboard
 
-## Getting Started
+Meta Ads management dashboard — Santa Rosa Paraguay.
 
-First, run the development server:
+## Stack
+
+- Next.js 16 (App Router) + TypeScript
+- Tailwind CSS 4
+- Recharts
+- Lucide icons
+- Meta Marketing API v21.0
+
+## Setup local
 
 ```bash
+npm install
+cp .env.example .env.local
+# Edit .env.local — add META_ACCESS_TOKEN
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Environment variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Variable | Required | Example |
+|---|---|---|
+| `META_ACCESS_TOKEN` | yes | `EAAb0yONX06EB...` |
+| `META_API_VERSION` | no (default `v21.0`) | `v21.0` |
 
-## Learn More
+## Deploy Vercel
 
-To learn more about Next.js, take a look at the following resources:
+1. Project on Vercel pointing to this repo.
+2. Add env vars in Project Settings → Environment Variables.
+3. Push to `main` → auto deploy.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Routes
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Route | Purpose |
+|---|---|
+| `/` | Dashboard — KPIs + campaigns table |
+| `/campaigns` | Campaign editor (Phase 2) |
+| `/ads` | Ad creative management (Phase 3) |
+| `/audience` | Targeting editor (Phase 2) |
+| `/budgets` | Budget editor (Phase 2) |
+| `/analytics` | Deep breakdowns (Phase 2) |
+| `/settings` | Configuration |
 
-## Deploy on Vercel
+## API routes
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+| Endpoint | Method | Purpose |
+|---|---|---|
+| `/api/accounts` | GET | List ad accounts |
+| `/api/campaigns?account_id=` | GET | List campaigns |
+| `/api/insights?account_id=&since=&until=&level=` | GET | Insights with leads/msgs |
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Phase roadmap
+
+- **Phase 1 (current):** read-only dashboard, multi-account, KPIs, charts, table.
+- **Phase 2:** mutations (rename, status, targeting, placement, budget).
+- **Phase 3:** creative management (upload, swap lead form, wizard new campaigns).
