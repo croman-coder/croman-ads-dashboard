@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Sidebar } from '@/components/Sidebar';
 import { TopBar } from '@/components/TopBar';
+import { useAccount } from '@/lib/use-account';
 import { KpiCard } from '@/components/KpiCard';
 import { DateRangePicker } from '@/components/DateRangePicker';
 import { fmt, fmtInt, fmtUSD } from '@/lib/utils';
@@ -31,7 +32,7 @@ type CampaignRow = {
 };
 
 export default function Dashboard() {
-  const [account, setAccount] = useState('');
+  const { account, setAccount } = useAccount();
   const [range, setRange] = useState<{ since?: string; until?: string }>({});
   const [rows, setRows] = useState<CampaignRow[]>([]);
   const [loading, setLoading] = useState(false);

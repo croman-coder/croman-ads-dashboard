@@ -101,10 +101,62 @@ export async function listCampaigns(accountId: string) {
 }
 
 export async function listAds(accountId: string) {
-  const fields = 'id,name,adset_id,campaign_id,effective_status';
+  const fields = 'id,name,adset_id,campaign_id,effective_status,status,created_time';
   const id = accountId.startsWith('act_') ? accountId : `act_${accountId}`;
   const r = await metaGet(`/${id}/ads`, { fields, limit: 500 });
   return r.data;
+}
+
+export async function listAdSets(accountId: string) {
+  const fields = 'id,name,campaign_id,status,effective_status,daily_budget,lifetime_budget,billing_event,optimization_goal,targeting,start_time,end_time';
+  const id = accountId.startsWith('act_') ? accountId : `act_${accountId}`;
+  const r = await metaGet(`/${id}/adsets`, { fields, limit: 500 });
+  return r.data;
+}
+
+export async function getAdSet(adsetId: string) {
+  const fields = 'id,name,campaign_id,status,effective_status,daily_budget,lifetime_budget,billing_event,optimization_goal,targeting,start_time,end_time';
+  const r = await metaGet(`/${adsetId}`, { fields }, { paginate: false });
+  return Array.isArray(r.data) ? r.data[0] : r;
+}
+
+export async function getCampaign(campaignId: string) {
+  const fields = 'id,name,status,effective_status,objective,daily_budget,lifetime_budget';
+  const r = await metaGet(`/${campaignId}`, { fields }, { paginate: false });
+  return Array.isArray(r.data) ? r.data[0] : r;
+}
+
+/* ---------- Mutation helpers ---------- */
+
+const VALID_STATUS = ['ACTIVE', 'PAUSED'] as const;
+type ValidStatus = (typeof VALID_STATUS)[number];
+
+export async function setStatus(objectId: string, status: string) {
+  const upper = status.toUpperCase() as ValidStatus;
+  if (!VALID_STATUS.includes(upper)) {
+    throw new Error(`Invalid status ${status}. Allowed: ${VALID_STATUS.join(', ')}`);
+  }
+  return metaPost(`/${objectId}`, { status: upper });
+}
+
+export async function renameObject(objectId: string, name: string) {
+  if (!name || name.trim().length === 0) throw new Error('Name required');
+  return metaPost(`/${objectId}`, { name });
+}
+
+export async function setBudget(
+  objectId: string,
+  amount: number,
+  type: 'daily' | 'lifetime'
+) {
+  const cents = Math.round(amount * 100);
+  if (!Number.isFinite(cents) || cents <= 0) throw new Error(`Invalid amount ${amount}`);
+  const field = type === 'lifetime' ? 'lifetime_budget' : 'daily_budget';
+  return metaPost(`/${objectId}`, { [field]: cents });
+}
+
+export async function updateTargeting(adsetId: string, targeting: Record<string, unknown>) {
+  return metaPost(`/${adsetId}`, { targeting });
 }
 
 export async function getInsights(
