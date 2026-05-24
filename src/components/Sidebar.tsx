@@ -65,15 +65,15 @@ export function Sidebar() {
   return (
     <aside className="hidden md:flex w-60 shrink-0 flex-col border-r border-[var(--hairline)] bg-[var(--bg-base)] relative z-10">
       <div className="px-5 py-5 border-b border-[var(--hairline)]">
-        <Link href="/" className="flex items-center gap-2.5 group">
-          <div className="w-9 h-9 rounded-md bg-[var(--accent)] text-[var(--accent-fg)] flex items-center justify-center font-black text-base shrink-0">
-            C
-          </div>
-          <div>
-            <div className="font-semibold text-[14px] text-[var(--fg)] leading-tight">Croman Ads</div>
-            <div className="text-[10px] uppercase tracking-[0.12em] text-[var(--fg-muted)] mt-0.5">Santa Rosa PY</div>
-          </div>
+        <Link href="/" className="flex items-center gap-3 group">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logo.png"
+            alt="Santa Rosa"
+            className="h-7 w-auto object-contain opacity-95 group-hover:opacity-100 transition-opacity"
+          />
         </Link>
+        <div className="eyebrow mt-3">Croman Ads</div>
       </div>
       <nav className="flex-1 px-2 py-4 overflow-y-auto">
         {SECTIONS.map((section, idx) => (

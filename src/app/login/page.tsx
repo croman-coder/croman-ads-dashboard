@@ -46,10 +46,8 @@ function LoginForm() {
       <div className="hidden lg:flex flex-col justify-between bg-[var(--bg-elevated)] p-12 border-r border-[var(--hairline)] relative overflow-hidden">
         <div className="relative z-10">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded bg-[var(--accent)] text-[var(--accent-fg)] flex items-center justify-center font-black">
-              C
-            </div>
-            <div className="text-sm font-semibold tracking-tight text-[var(--fg)]">Croman Ads</div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="Santa Rosa" className="h-9 w-auto object-contain" />
           </div>
         </div>
         <div className="relative z-10">
@@ -72,8 +70,8 @@ function LoginForm() {
       <div className="flex items-center justify-center px-6 py-12">
         <div className="w-full max-w-sm fade-in">
           <div className="lg:hidden mb-8 flex items-center gap-3">
-            <div className="w-10 h-10 rounded bg-[var(--accent)] text-[var(--accent-fg)] flex items-center justify-center font-black">C</div>
-            <div className="text-sm font-semibold tracking-tight text-[var(--fg)]">Croman Ads</div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="Santa Rosa" className="h-9 w-auto object-contain" />
           </div>
 
           <p className="text-[11px] uppercase tracking-[0.16em] text-[var(--fg-muted)] mb-2">Acceso</p>

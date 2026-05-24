@@ -1,11 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Sidebar } from '@/components/Sidebar';
 import { TopBar } from '@/components/TopBar';
 import { useAccount } from '@/lib/use-account';
 import { KpiCard } from '@/components/KpiCard';
 import { DateRangePicker } from '@/components/DateRangePicker';
+import { AiInsights } from '@/components/AiInsights';
+import { TopPerformer } from '@/components/TopPerformer';
 import { fmt, fmtInt, fmtUSD } from '@/lib/utils';
 import {
   BarChart,
@@ -31,10 +33,32 @@ type CampaignRow = {
   msgs: number;
 };
 
+function shiftRangeBack(since?: string, until?: string): { since: string; until: string } | null {
+  if (!since || !until) {
+    // default range = last 30 days; previous = the 30 before
+    const now = new Date();
+    const e = new Date(now); e.setDate(e.getDate() - 30);
+    const s = new Date(now); s.setDate(s.getDate() - 60);
+    return { since: s.toISOString().slice(0, 10), until: e.toISOString().slice(0, 10) };
+  }
+  const s = new Date(since); const u = new Date(until);
+  const days = Math.max(1, Math.round((u.getTime() - s.getTime()) / 86400000) + 1);
+  const prevU = new Date(s); prevU.setDate(prevU.getDate() - 1);
+  const prevS = new Date(prevU); prevS.setDate(prevS.getDate() - days + 1);
+  return { since: prevS.toISOString().slice(0, 10), until: prevU.toISOString().slice(0, 10) };
+}
+
+function pct(curr: number, prev: number): { value: number; trend: 'up' | 'down' | 'flat' } {
+  if (!prev) return { value: 0, trend: 'flat' };
+  const d = ((curr - prev) / prev) * 100;
+  return { value: d, trend: Math.abs(d) < 0.5 ? 'flat' : d > 0 ? 'up' : 'down' };
+}
+
 export default function Dashboard() {
   const { account, setAccount } = useAccount();
   const [range, setRange] = useState<{ since?: string; until?: string }>({});
   const [rows, setRows] = useState<CampaignRow[]>([]);
+  const [prevRows, setPrevRows] = useState<CampaignRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -45,30 +69,72 @@ export default function Dashboard() {
     const qs = new URLSearchParams({ account_id: account, level: 'campaign' });
     if (range.since) qs.set('since', range.since);
     if (range.until) qs.set('until', range.until);
-    fetch(`/api/insights?${qs}`)
-      .then((r) => r.json())
-      .then((j) => {
-        if (j.error) throw new Error(j.error);
-        setRows(j.data || []);
+
+    const prev = shiftRangeBack(range.since, range.until);
+    const qsPrev = new URLSearchParams({ account_id: account, level: 'campaign' });
+    if (prev) {
+      qsPrev.set('since', prev.since);
+      qsPrev.set('until', prev.until);
+    }
+
+    Promise.all([
+      fetch(`/api/insights?${qs}`).then((r) => r.json()),
+      fetch(`/api/insights?${qsPrev}`).then((r) => r.json()),
+    ])
+      .then(([curr, p]) => {
+        if (curr.error) throw new Error(curr.error);
+        setRows(curr.data || []);
+        setPrevRows(p?.data || []);
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   }, [account, range.since, range.until]);
 
-  const totals = rows.reduce(
-    (a, r) => ({
-      spend: a.spend + Number(r.spend || 0),
-      impressions: a.impressions + Number(r.impressions || 0),
-      clicks: a.clicks + Number(r.clicks || 0),
-      leads: a.leads + (r.leads || 0),
-      msgs: a.msgs + (r.msgs || 0),
-    }),
-    { spend: 0, impressions: 0, clicks: 0, leads: 0, msgs: 0 }
+  const totals = useMemo(
+    () =>
+      rows.reduce(
+        (a, r) => ({
+          spend: a.spend + Number(r.spend || 0),
+          impressions: a.impressions + Number(r.impressions || 0),
+          clicks: a.clicks + Number(r.clicks || 0),
+          leads: a.leads + (r.leads || 0),
+          msgs: a.msgs + (r.msgs || 0),
+        }),
+        { spend: 0, impressions: 0, clicks: 0, leads: 0, msgs: 0 }
+      ),
+    [rows]
+  );
+
+  const prevTotals = useMemo(
+    () =>
+      prevRows.reduce(
+        (a, r) => ({
+          spend: a.spend + Number(r.spend || 0),
+          impressions: a.impressions + Number(r.impressions || 0),
+          clicks: a.clicks + Number(r.clicks || 0),
+          leads: a.leads + (r.leads || 0),
+          msgs: a.msgs + (r.msgs || 0),
+        }),
+        { spend: 0, impressions: 0, clicks: 0, leads: 0, msgs: 0 }
+      ),
+    [prevRows]
   );
 
   const cpl = totals.leads ? totals.spend / totals.leads : 0;
   const ctr = totals.impressions ? (totals.clicks / totals.impressions) * 100 : 0;
   const cpm = totals.impressions ? (totals.spend / totals.impressions) * 1000 : 0;
+
+  const prevCpl = prevTotals.leads ? prevTotals.spend / prevTotals.leads : 0;
+  const prevCtr = prevTotals.impressions ? (prevTotals.clicks / prevTotals.impressions) * 100 : 0;
+  const prevCpm = prevTotals.impressions ? (prevTotals.spend / prevTotals.impressions) * 1000 : 0;
+
+  const dSpend = pct(totals.spend, prevTotals.spend);
+  const dLeads = pct(totals.leads, prevTotals.leads);
+  const dMsgs = pct(totals.msgs, prevTotals.msgs);
+  // CPL/CPM lower is better — invert trend semantics
+  const dCpl = pct(cpl, prevCpl);
+  const dCtr = pct(ctr, prevCtr);
+  const dCpm = pct(cpm, prevCpm);
 
   const chartData = rows
     .map((r) => ({
@@ -102,12 +168,60 @@ export default function Dashboard() {
           )}
 
           <section className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 stagger">
-            <KpiCard label="INVERSIÓN" value={fmtUSD(totals.spend)} accent="primary" />
-            <KpiCard label="LEADS" value={fmtInt(totals.leads)} accent="success" />
-            <KpiCard label="CHATS" value={fmtInt(totals.msgs)} accent="primary" />
-            <KpiCard label="CPL" value={fmtUSD(cpl)} accent={cpl > 5 ? 'destructive' : cpl > 3 ? 'warning' : 'success'} />
-            <KpiCard label="CTR" value={`${fmt(ctr)}%`} accent="primary" />
-            <KpiCard label="CPM" value={fmtUSD(cpm)} accent="primary" />
+            <KpiCard
+              label="INVERSIÓN"
+              value={fmtUSD(totals.spend)}
+              accent="primary"
+              trend={dSpend.trend}
+              trendValue={dSpend.value ? `${dSpend.value > 0 ? '+' : ''}${dSpend.value.toFixed(1)}%` : ''}
+              hint="vs período anterior"
+            />
+            <KpiCard
+              label="LEADS"
+              value={fmtInt(totals.leads)}
+              accent="success"
+              trend={dLeads.trend}
+              trendValue={dLeads.value ? `${dLeads.value > 0 ? '+' : ''}${dLeads.value.toFixed(1)}%` : ''}
+              hint="vs período anterior"
+            />
+            <KpiCard
+              label="CHATS"
+              value={fmtInt(totals.msgs)}
+              accent="primary"
+              trend={dMsgs.trend}
+              trendValue={dMsgs.value ? `${dMsgs.value > 0 ? '+' : ''}${dMsgs.value.toFixed(1)}%` : ''}
+              hint="vs período anterior"
+            />
+            <KpiCard
+              label="CPL"
+              value={fmtUSD(cpl)}
+              accent={cpl > 5 ? 'destructive' : cpl > 3 ? 'warning' : 'success'}
+              trend={dCpl.trend === 'up' ? 'down' : dCpl.trend === 'down' ? 'up' : 'flat'}
+              trendValue={dCpl.value ? `${dCpl.value > 0 ? '+' : ''}${dCpl.value.toFixed(1)}%` : ''}
+              hint="menor es mejor"
+            />
+            <KpiCard
+              label="CTR"
+              value={`${fmt(ctr)}%`}
+              accent="primary"
+              trend={dCtr.trend}
+              trendValue={dCtr.value ? `${dCtr.value > 0 ? '+' : ''}${dCtr.value.toFixed(1)}%` : ''}
+              hint="vs período anterior"
+            />
+            <KpiCard
+              label="CPM"
+              value={fmtUSD(cpm)}
+              accent="primary"
+              trend={dCpm.trend === 'up' ? 'down' : dCpm.trend === 'down' ? 'up' : 'flat'}
+              trendValue={dCpm.value ? `${dCpm.value > 0 ? '+' : ''}${dCpm.value.toFixed(1)}%` : ''}
+              hint="menor es mejor"
+            />
+          </section>
+
+          {/* AI Insights + Top Performer side by side */}
+          <section className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-5 stagger">
+            <AiInsights rows={rows} totals={totals} prevTotals={prevTotals} />
+            <TopPerformer rows={rows} accountId={account} />
           </section>
 
           <section className="grid grid-cols-1 lg:grid-cols-2 gap-5 stagger">
