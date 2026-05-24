@@ -159,6 +159,208 @@ export async function updateTargeting(adsetId: string, targeting: Record<string,
   return metaPost(`/${adsetId}`, { targeting });
 }
 
+/* ---------- Pages + Forms ---------- */
+
+export async function listPromotePages(accountId: string) {
+  const id = accountId.startsWith('act_') ? accountId : `act_${accountId}`;
+  const r = await metaGet<{ id: string; name: string }>(`/${id}/promote_pages`, {
+    fields: 'id,name,category',
+    limit: 50,
+  });
+  return r.data;
+}
+
+export async function getPageAccessToken(pageId: string): Promise<string | null> {
+  const r = await metaGet<{ id: string; name: string; access_token?: string }>(`/me/accounts`, {
+    fields: 'id,name,access_token',
+    limit: 100,
+  });
+  const found = r.data.find((p) => p.id === pageId);
+  return found?.access_token || null;
+}
+
+export async function listPageLeadForms(pageId: string) {
+  const token = await getPageAccessToken(pageId);
+  if (!token) throw new Error(`No page access token available for page ${pageId}`);
+  const url = new URL(`${BASE_URL}/${pageId}/leadgen_forms`);
+  url.searchParams.set('access_token', token);
+  url.searchParams.set('fields', 'id,name,status,locale,leads_count,created_time');
+  url.searchParams.set('limit', '100');
+  const all: Array<{ id: string; name: string; status?: string; leads_count?: number }> = [];
+  let nextUrl: string | undefined = url.toString();
+  while (nextUrl) {
+    const res: Response = await fetch(nextUrl, { cache: 'no-store' });
+    const json = await res.json();
+    if (!res.ok || json.error) throw new Error(`Page API ${res.status}: ${json.error?.message || res.statusText}`);
+    if (Array.isArray(json.data)) all.push(...json.data);
+    nextUrl = json.paging?.next;
+  }
+  return all;
+}
+
+/* ---------- Media upload ---------- */
+
+export async function uploadAdImage(accountId: string, base64: string): Promise<{ hash: string }> {
+  const id = accountId.startsWith('act_') ? accountId : `act_${accountId}`;
+  const res = await metaPost(`/${id}/adimages`, { bytes: base64 }) as { images?: Record<string, { hash: string }> };
+  const images = res.images || {};
+  const first = Object.values(images)[0];
+  if (!first?.hash) throw new Error(`No image_hash returned: ${JSON.stringify(res).slice(0, 200)}`);
+  return { hash: first.hash };
+}
+
+/* ---------- Ad creative swap ---------- */
+
+interface CreativeSpec {
+  page_id?: string;
+  instagram_user_id?: string;
+  link_data?: {
+    call_to_action?: { value?: { lead_gen_form_id?: string; link?: string } };
+    [k: string]: unknown;
+  };
+  video_data?: {
+    call_to_action?: { value?: { lead_gen_form_id?: string; link?: string } };
+    [k: string]: unknown;
+  };
+}
+
+export async function getCreative(creativeId: string) {
+  const r = await metaGet(`/${creativeId}`, {
+    fields: 'id,name,object_story_spec,asset_feed_spec',
+  }, { paginate: false });
+  return Array.isArray(r.data) ? r.data[0] : r;
+}
+
+export async function getAd(adId: string) {
+  const r = await metaGet(`/${adId}`, {
+    fields: 'id,name,status,effective_status,adset_id,creative{id,name,object_story_spec,asset_feed_spec,call_to_action_type}',
+  }, { paginate: false });
+  return Array.isArray(r.data) ? r.data[0] : r;
+}
+
+export async function swapLeadFormOnAd(adId: string, newFormId: string, accountId: string): Promise<{ new_creative_id: string }> {
+  const ad = await getAd(adId) as { name: string; creative: { id: string; name: string; object_story_spec?: CreativeSpec } };
+  if (!ad.creative?.object_story_spec) throw new Error('Creative without object_story_spec (asset_feed_spec not supported in this API)');
+  const spec: CreativeSpec = JSON.parse(JSON.stringify(ad.creative.object_story_spec));
+  const target = spec.link_data || spec.video_data;
+  if (!target) throw new Error('Creative missing link_data/video_data');
+  if (!target.call_to_action) target.call_to_action = { value: {} };
+  if (!target.call_to_action.value) target.call_to_action.value = {};
+  target.call_to_action.value.lead_gen_form_id = newFormId;
+  if (!target.call_to_action.value.link) target.call_to_action.value.link = 'http://fb.me/';
+
+  const acctId = accountId.startsWith('act_') ? accountId : `act_${accountId}`;
+  const newCreative = await metaPost(`/${acctId}/adcreatives`, {
+    name: `${ad.creative.name} | swap`,
+    object_story_spec: spec,
+  }) as { id: string };
+  await metaPost(`/${adId}`, { creative: { creative_id: newCreative.id } });
+  return { new_creative_id: newCreative.id };
+}
+
+/* ---------- Campaign create wizard ---------- */
+
+interface CampaignCreateInput {
+  account_id: string;
+  campaign_name: string;
+  objective: string; // OUTCOME_LEADS, OUTCOME_TRAFFIC, etc
+  adset_name: string;
+  budget_amount: number;
+  budget_type: 'daily' | 'lifetime';
+  start_time?: string;
+  end_time?: string;
+  page_id: string;
+  instagram_user_id?: string;
+  targeting: Record<string, unknown>;
+  ad_name: string;
+  headline: string;
+  description?: string;
+  message: string;
+  image_hash: string;
+  lead_gen_form_id?: string;
+  call_to_action?: string;
+}
+
+export async function createCampaignWizard(input: CampaignCreateInput) {
+  const acct = input.account_id.startsWith('act_') ? input.account_id : `act_${input.account_id}`;
+
+  // 1. Campaign
+  const camp = await metaPost(`/${acct}/campaigns`, {
+    name: input.campaign_name,
+    objective: input.objective,
+    status: 'PAUSED',
+    special_ad_categories: ['NONE'],
+    is_adset_budget_sharing_enabled: false,
+  }) as { id: string };
+
+  // 2. Ad set
+  const budgetCents = Math.round(input.budget_amount * 100);
+  const adsetBody: Record<string, unknown> = {
+    name: input.adset_name,
+    campaign_id: camp.id,
+    status: 'PAUSED',
+    billing_event: 'IMPRESSIONS',
+    optimization_goal: input.objective === 'OUTCOME_LEADS' ? 'LEAD_GENERATION' : 'LINK_CLICKS',
+    bid_strategy: 'LOWEST_COST_WITHOUT_CAP',
+    targeting: input.targeting,
+  };
+  if (input.budget_type === 'daily') {
+    adsetBody.daily_budget = budgetCents;
+  } else {
+    adsetBody.lifetime_budget = budgetCents;
+    if (!input.start_time || !input.end_time) {
+      throw new Error('Lifetime budget requires start_time and end_time');
+    }
+    adsetBody.start_time = input.start_time;
+    adsetBody.end_time = input.end_time;
+  }
+  if (input.objective === 'OUTCOME_LEADS') {
+    adsetBody.destination_type = 'ON_AD';
+    adsetBody.promoted_object = { page_id: input.page_id };
+  }
+  const adset = await metaPost(`/${acct}/adsets`, adsetBody) as { id: string };
+
+  // 3. Creative
+  const cta = input.call_to_action || (input.objective === 'OUTCOME_LEADS' ? 'GET_QUOTE' : 'LEARN_MORE');
+  const linkData: Record<string, unknown> = {
+    link: 'http://fb.me/',
+    message: input.message,
+    name: input.headline,
+    description: input.description || '',
+    image_hash: input.image_hash,
+    call_to_action: {
+      type: cta,
+      value: {
+        ...(input.lead_gen_form_id ? { lead_gen_form_id: input.lead_gen_form_id } : {}),
+        link: 'http://fb.me/',
+      },
+    },
+  };
+  const creative = await metaPost(`/${acct}/adcreatives`, {
+    name: `Creative - ${input.ad_name}`,
+    object_story_spec: {
+      page_id: input.page_id,
+      ...(input.instagram_user_id ? { instagram_user_id: input.instagram_user_id } : {}),
+      link_data: linkData,
+    },
+  }) as { id: string };
+
+  // 4. Ad
+  const ad = await metaPost(`/${acct}/ads`, {
+    name: input.ad_name,
+    adset_id: adset.id,
+    creative: { creative_id: creative.id },
+    status: 'PAUSED',
+  }) as { id: string };
+
+  return {
+    campaign_id: camp.id,
+    adset_id: adset.id,
+    creative_id: creative.id,
+    ad_id: ad.id,
+  };
+}
+
 export async function getInsights(
   accountId: string,
   opts: {

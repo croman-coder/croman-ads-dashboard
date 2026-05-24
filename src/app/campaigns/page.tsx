@@ -9,7 +9,8 @@ import { ToastStack } from '@/components/Toast';
 import { useToasts } from '@/lib/use-toasts';
 import { useAccount } from '@/lib/use-account';
 import { fmt, fmtUSD } from '@/lib/utils';
-import { Play, Pause, Pencil, RefreshCw, Wallet } from 'lucide-react';
+import Link from 'next/link';
+import { Play, Pause, Pencil, RefreshCw, Wallet, Plus } from 'lucide-react';
 
 type Campaign = {
   id: string;
@@ -120,10 +121,19 @@ export default function CampaignsPage() {
               <h1 className="text-2xl font-bold text-slate-900">Campañas</h1>
               <p className="text-sm text-slate-500">Gestión completa — activar, pausar, renombrar, ajustar presupuesto</p>
             </div>
-            <button onClick={load} disabled={loading} className="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900">
-              <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-              Recargar
-            </button>
+            <div className="flex items-center gap-2">
+              <Link
+                href="/campaigns/new"
+                className="flex items-center gap-2 bg-[var(--color-primary)] text-white px-3 py-1.5 rounded text-sm font-medium hover:bg-blue-800"
+              >
+                <Plus size={14} />
+                Nueva campaña
+              </Link>
+              <button onClick={load} disabled={loading} className="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900">
+                <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+                Recargar
+              </button>
+            </div>
           </div>
 
           {error && (

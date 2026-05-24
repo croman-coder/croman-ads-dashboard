@@ -8,7 +8,7 @@ import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { ToastStack } from '@/components/Toast';
 import { useToasts } from '@/lib/use-toasts';
 import { useAccount } from '@/lib/use-account';
-import { Play, Pause, Pencil, RefreshCw, Tag, Search } from 'lucide-react';
+import { Play, Pause, Pencil, RefreshCw, Tag, Search, FileText } from 'lucide-react';
 
 type Ad = {
   id: string;
@@ -31,6 +31,7 @@ export default function AdsPage() {
   const { toasts, push, dismiss } = useToasts();
   const [confirm, setConfirm] = useState<null | { title: string; msg: string; action: () => Promise<void>; destructive?: boolean }>(null);
   const [renameModal, setRenameModal] = useState<null | { id: string; current: string }>(null);
+  const [swapModal, setSwapModal] = useState<null | { ad: Ad }>(null);
 
   const load = useCallback(async () => {
     if (!account) return;
@@ -233,6 +234,13 @@ export default function AdsPage() {
                           >
                             <Pencil size={14} />
                           </button>
+                          <button
+                            onClick={() => setSwapModal({ ad: a })}
+                            className="p-1.5 rounded hover:bg-slate-100 text-slate-600"
+                            title="Cambiar lead form"
+                          >
+                            <FileText size={14} />
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -269,7 +277,138 @@ export default function AdsPage() {
         />
       )}
 
+      {swapModal && (
+        <SwapFormModal
+          ad={swapModal.ad}
+          accountId={account}
+          onCancel={() => setSwapModal(null)}
+          onDone={(msg, type) => { push(msg, type); setSwapModal(null); load(); }}
+        />
+      )}
+
       <ToastStack toasts={toasts} onDismiss={dismiss} />
+    </div>
+  );
+}
+
+function SwapFormModal({
+  ad,
+  accountId,
+  onCancel,
+  onDone,
+}: {
+  ad: Ad;
+  accountId: string;
+  onCancel: () => void;
+  onDone: (msg: string, type: 'success' | 'error') => void;
+}) {
+  const [pages, setPages] = useState<Array<{ id: string; name: string }>>([]);
+  const [pageId, setPageId] = useState('');
+  const [forms, setForms] = useState<Array<{ id: string; name: string; leads_count?: number; status?: string }>>([]);
+  const [selectedForm, setSelectedForm] = useState('');
+  const [loadingPages, setLoadingPages] = useState(false);
+  const [loadingForms, setLoadingForms] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!accountId) return;
+    setLoadingPages(true);
+    fetch(`/api/pages?account_id=${accountId}`)
+      .then((r) => r.json())
+      .then((j) => {
+        if (!j.error) {
+          setPages(j.data || []);
+          if (j.data?.[0]) setPageId(j.data[0].id);
+        }
+      })
+      .finally(() => setLoadingPages(false));
+  }, [accountId]);
+
+  useEffect(() => {
+    if (!pageId) return;
+    setLoadingForms(true);
+    setForms([]);
+    fetch(`/api/leadgen-forms?page_id=${pageId}`)
+      .then((r) => r.json())
+      .then((j) => {
+        if (j.error) onDone(j.error, 'error');
+        else setForms((j.data || []).sort((a: { created_time?: string }, b: { created_time?: string }) => (b.created_time || '').localeCompare(a.created_time || '')));
+      })
+      .finally(() => setLoadingForms(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pageId]);
+
+  async function swap() {
+    if (!selectedForm) return;
+    setSaving(true);
+    try {
+      const r = await fetch('/api/mutation/swap-form', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ad_id: ad.id, new_form_id: selectedForm, account_id: accountId }),
+      });
+      const j = await r.json();
+      if (j.error) throw new Error(j.error);
+      onDone(`Form swap OK · nuevo creative ${j.new_creative_id}`, 'success');
+    } catch (e) {
+      onDone(e instanceof Error ? e.message : 'Error', 'error');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onCancel}>
+      <div
+        className="bg-white rounded-lg shadow-xl max-w-lg w-full mx-4 p-6 border border-[var(--color-border)] max-h-[80vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h3 className="text-base font-semibold text-slate-900 mb-1">Cambiar Lead Form</h3>
+        <p className="text-xs text-slate-500 mb-4">Ad: {ad.name}</p>
+
+        <label className="text-xs font-semibold uppercase tracking-wider text-slate-500">Página</label>
+        <select
+          value={pageId}
+          onChange={(e) => setPageId(e.target.value)}
+          disabled={loadingPages}
+          className="w-full mt-1 px-3 py-2 border border-[var(--color-border)] rounded text-sm bg-white"
+        >
+          {pages.map((p) => (
+            <option key={p.id} value={p.id}>{p.name} ({p.id})</option>
+          ))}
+        </select>
+
+        <label className="text-xs font-semibold uppercase tracking-wider text-slate-500 mt-4 block">Lead Form ({forms.length})</label>
+        <div className="border border-[var(--color-border)] rounded mt-1 max-h-72 overflow-y-auto">
+          {loadingForms && <div className="p-3 text-sm text-slate-500">Cargando forms…</div>}
+          {!loadingForms && forms.length === 0 && (
+            <div className="p-3 text-sm text-slate-400">Sin forms</div>
+          )}
+          {forms.map((f) => (
+            <button
+              key={f.id}
+              onClick={() => setSelectedForm(f.id)}
+              className={`w-full text-left px-3 py-2 border-b border-slate-100 text-sm hover:bg-slate-50 ${
+                selectedForm === f.id ? 'bg-blue-50 border-l-2 border-l-[var(--color-primary)]' : ''
+              }`}
+            >
+              <div className="font-medium text-slate-800">{f.name}</div>
+              <div className="text-[11px] text-slate-400 font-mono">{f.id} · {f.leads_count || 0} leads · {f.status}</div>
+            </button>
+          ))}
+        </div>
+
+        <div className="flex justify-end gap-2 mt-5">
+          <button onClick={onCancel} disabled={saving} className="px-3 py-1.5 rounded text-sm border border-[var(--color-border)] hover:bg-slate-50">Cancelar</button>
+          <button
+            onClick={swap}
+            disabled={!selectedForm || saving}
+            className="px-3 py-1.5 rounded text-sm font-medium text-white bg-[var(--color-primary)] hover:bg-blue-800 disabled:opacity-50"
+          >
+            {saving ? 'Aplicando…' : 'Aplicar swap'}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
