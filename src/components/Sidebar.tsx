@@ -12,6 +12,7 @@ import {
   Settings,
   Bell,
   ShieldCheck,
+  Sparkles,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -28,6 +29,7 @@ type NavItem = {
 
 const NAV: NavItem[] = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/creative/new', label: 'Crear con IA', icon: Sparkles },
   { href: '/alerts', label: 'Alertas', icon: Bell, showBadge: true },
   { href: '/approvals', label: 'Aprobaciones', icon: ShieldCheck, showApprovalBadge: true },
   { href: '/campaigns', label: 'Campañas', icon: Megaphone },

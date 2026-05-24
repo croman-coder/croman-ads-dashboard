@@ -110,66 +110,78 @@ export default function Dashboard() {
             <KpiCard label="CPM" value={fmtUSD(cpm)} accent="primary" />
           </section>
 
-          <section className="grid grid-cols-1 lg:grid-cols-2 gap-4 stagger">
-            <div className="glass rounded-xl p-5">
-              <h2 className="text-sm font-semibold text-white mb-1">Gasto por campaña</h2>
-              <p className="text-[11px] text-[var(--fg-muted)] mb-3">Top 10 · USD</p>
+          <section className="grid grid-cols-1 lg:grid-cols-2 gap-5 stagger">
+            <div className="card p-6">
+              <div className="flex items-baseline justify-between mb-4">
+                <h2 className="display text-2xl text-[var(--fg)]">Gasto por campaña</h2>
+                <span className="text-[10px] uppercase tracking-[0.16em] text-[var(--fg-muted)]">Top 10 · USD</span>
+              </div>
               <div style={{ width: '100%', height: 320 }}>
                 <ResponsiveContainer>
                   <BarChart data={chartData} layout="vertical" margin={{ left: 60 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
-                    <XAxis type="number" tick={{ fontSize: 11, fill: '#8A8F98' }} />
-                    <YAxis dataKey="name" type="category" width={150} tick={{ fontSize: 11, fill: '#EDEDEF' }} />
-                    <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, background: '#11111a', border: '1px solid rgba(255,255,255,0.14)' }} />
-                    <Bar dataKey="spend" name="Spend USD" fill="#6A77E0" radius={[0, 6, 6, 0]} />
+                    <CartesianGrid strokeDasharray="2 4" stroke="oklch(0.30 0.012 95)" />
+                    <XAxis type="number" tick={{ fontSize: 11, fill: 'oklch(0.62 0.012 95)' }} />
+                    <YAxis dataKey="name" type="category" width={150} tick={{ fontSize: 11, fill: 'oklch(0.84 0.010 95)' }} />
+                    <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, background: 'oklch(0.19 0.010 95)', border: '1px solid oklch(0.30 0.012 95)', color: 'oklch(0.96 0.008 95)' }} cursor={{ fill: 'oklch(0.74 0.155 60 / 0.08)' }} />
+                    <Bar dataKey="spend" name="Spend USD" fill="oklch(0.74 0.155 60)" radius={[0, 4, 4, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
             </div>
 
-            <div className="glass rounded-xl p-5">
-              <h2 className="text-sm font-semibold text-white mb-1">CPL por campaña</h2>
-              <p className="text-[11px] text-[var(--fg-muted)] mb-3">Verde &lt;$3 · Amber &lt;$5 · Rojo ≥$5</p>
+            <div className="card p-6">
+              <div className="flex items-baseline justify-between mb-4">
+                <h2 className="display text-2xl text-[var(--fg)]">CPL por campaña</h2>
+                <span className="text-[10px] uppercase tracking-[0.16em] text-[var(--fg-muted)]">USD por lead</span>
+              </div>
               <div style={{ width: '100%', height: 320 }}>
                 <ResponsiveContainer>
                   <BarChart data={chartData} layout="vertical" margin={{ left: 60 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
-                    <XAxis type="number" tick={{ fontSize: 11, fill: '#8A8F98' }} />
-                    <YAxis dataKey="name" type="category" width={150} tick={{ fontSize: 11, fill: '#EDEDEF' }} />
-                    <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, background: '#11111a', border: '1px solid rgba(255,255,255,0.14)' }} />
-                    <Bar dataKey="cpl" name="CPL USD" radius={[0, 6, 6, 0]}>
+                    <CartesianGrid strokeDasharray="2 4" stroke="oklch(0.30 0.012 95)" />
+                    <XAxis type="number" tick={{ fontSize: 11, fill: 'oklch(0.62 0.012 95)' }} />
+                    <YAxis dataKey="name" type="category" width={150} tick={{ fontSize: 11, fill: 'oklch(0.84 0.010 95)' }} />
+                    <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, background: 'oklch(0.19 0.010 95)', border: '1px solid oklch(0.30 0.012 95)', color: 'oklch(0.96 0.008 95)' }} cursor={{ fill: 'oklch(0.74 0.155 60 / 0.08)' }} />
+                    <Bar dataKey="cpl" name="CPL USD" radius={[0, 4, 4, 0]}>
                       {chartData.map((d, i) => (
-                        <Cell key={i} fill={d.cpl > 5 ? '#FF5C7C' : d.cpl > 3 ? '#FFB547' : '#2EE5A1'} />
+                        <Cell key={i} fill={d.cpl > 5 ? 'oklch(0.65 0.20 25)' : d.cpl > 3 ? 'oklch(0.78 0.155 80)' : 'oklch(0.74 0.155 155)'} />
                       ))}
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </div>
+              <div className="flex items-center gap-4 mt-4 text-[11px] text-[var(--fg-muted)]">
+                <span className="flex items-center gap-1.5"><span className="dot dot-success" /> &lt;$3</span>
+                <span className="flex items-center gap-1.5"><span className="dot dot-warning" /> $3–$5</span>
+                <span className="flex items-center gap-1.5"><span className="dot dot-danger" /> ≥$5</span>
+              </div>
             </div>
           </section>
 
-          <section className="glass rounded-xl overflow-hidden fade-in">
-            <div className="px-5 py-3 border-b border-[var(--border)] flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-white">Campañas</h2>
-              {loading && <span className="text-xs text-[var(--fg-muted)]">Cargando…</span>}
+          <section className="card overflow-hidden fade-in">
+            <div className="px-6 py-4 border-b border-[var(--hairline)] flex items-center justify-between">
+              <div>
+                <h2 className="display text-2xl text-[var(--fg)]">Campañas</h2>
+                <p className="text-[11px] text-[var(--fg-muted)] mt-0.5">{rows.length} activas · ordenado por inversión</p>
+              </div>
+              {loading && <span className="text-xs text-[var(--fg-muted)] flex items-center gap-2"><span className="dot dot-warning animate-pulse" /> Cargando…</span>}
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead className="bg-[var(--surface)]">
-                  <tr className="text-[11px] uppercase tracking-wider text-[var(--fg-muted)] font-semibold">
-                    <th className="px-4 py-2.5 text-left">Campaña</th>
-                    <th className="px-4 py-2.5 text-right">Spend</th>
-                    <th className="px-4 py-2.5 text-right">Impr.</th>
-                    <th className="px-4 py-2.5 text-right">Clicks</th>
-                    <th className="px-4 py-2.5 text-right">CTR</th>
-                    <th className="px-4 py-2.5 text-right">Leads</th>
-                    <th className="px-4 py-2.5 text-right">CPL</th>
-                    <th className="px-4 py-2.5 text-right">Freq.</th>
+                <thead>
+                  <tr className="text-[10px] uppercase tracking-[0.14em] text-[var(--fg-muted)] font-semibold border-b border-[var(--hairline)]">
+                    <th className="px-6 py-3 text-left">Campaña</th>
+                    <th className="px-4 py-3 text-right">Spend</th>
+                    <th className="px-4 py-3 text-right">Impr.</th>
+                    <th className="px-4 py-3 text-right">Clicks</th>
+                    <th className="px-4 py-3 text-right">CTR</th>
+                    <th className="px-4 py-3 text-right">Leads</th>
+                    <th className="px-4 py-3 text-right">CPL</th>
+                    <th className="px-6 py-3 text-right">Freq.</th>
                   </tr>
                 </thead>
-                <tbody className="font-[family-name:var(--font-mono)]">
+                <tbody style={{ fontVariantNumeric: 'tabular-nums' }}>
                   {rows.length === 0 && !loading && (
-                    <tr><td colSpan={8} className="px-4 py-10 text-center text-[var(--fg-muted)]">Sin datos</td></tr>
+                    <tr><td colSpan={8} className="px-4 py-16 text-center text-[var(--fg-muted)]">Sin datos para este rango</td></tr>
                   )}
                   {rows
                     .slice()
@@ -177,18 +189,19 @@ export default function Dashboard() {
                     .map((r) => {
                       const sp = Number(r.spend || 0);
                       const rcpl = r.leads ? sp / r.leads : 0;
+                      const cplColor = rcpl > 5 ? 'text-[var(--danger)]' : rcpl > 3 ? 'text-[var(--warning)]' : 'text-[var(--success)]';
                       return (
-                        <tr key={r.campaign_id} className="border-t border-[var(--border)] hover:bg-white/[0.03] transition-colors">
-                          <td className="px-4 py-2 text-white font-sans">{r.campaign_name}</td>
-                          <td className="px-4 py-2 text-right text-white">{fmtUSD(sp)}</td>
-                          <td className="px-4 py-2 text-right text-[var(--fg-muted)]">{fmtInt(r.impressions)}</td>
-                          <td className="px-4 py-2 text-right text-[var(--fg-muted)]">{fmtInt(r.clicks)}</td>
-                          <td className="px-4 py-2 text-right text-[var(--fg-muted)]">{fmt(r.ctr)}%</td>
-                          <td className="px-4 py-2 text-right text-white">{r.leads || '—'}</td>
-                          <td className={`px-4 py-2 text-right font-semibold ${rcpl > 5 ? 'text-[var(--color-destructive)]' : rcpl > 3 ? 'text-[var(--color-warning)]' : 'text-[var(--color-success)]'}`}>
+                        <tr key={r.campaign_id} className="border-t border-[var(--hairline)] hover:bg-[var(--surface)] transition-colors">
+                          <td className="px-6 py-3 text-[var(--fg)] font-medium">{r.campaign_name}</td>
+                          <td className="px-4 py-3 text-right text-[var(--fg)] font-[family-name:var(--font-mono)]">{fmtUSD(sp)}</td>
+                          <td className="px-4 py-3 text-right text-[var(--fg-soft)] font-[family-name:var(--font-mono)]">{fmtInt(r.impressions)}</td>
+                          <td className="px-4 py-3 text-right text-[var(--fg-soft)] font-[family-name:var(--font-mono)]">{fmtInt(r.clicks)}</td>
+                          <td className="px-4 py-3 text-right text-[var(--fg-soft)] font-[family-name:var(--font-mono)]">{fmt(r.ctr)}%</td>
+                          <td className="px-4 py-3 text-right text-[var(--fg)] font-[family-name:var(--font-mono)]">{r.leads || '—'}</td>
+                          <td className={`px-4 py-3 text-right font-semibold font-[family-name:var(--font-mono)] ${cplColor}`}>
                             {r.leads ? fmtUSD(rcpl) : '—'}
                           </td>
-                          <td className="px-4 py-2 text-right text-[var(--fg-muted)]">{fmt(r.frequency)}</td>
+                          <td className="px-6 py-3 text-right text-[var(--fg-soft)] font-[family-name:var(--font-mono)]">{fmt(r.frequency)}</td>
                         </tr>
                       );
                     })}
