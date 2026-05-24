@@ -101,7 +101,12 @@ export async function listCampaigns(accountId: string) {
 }
 
 export async function listAds(accountId: string) {
-  const fields = 'id,name,adset_id,campaign_id,effective_status,status,created_time';
+  // Expand creative for previews: thumbnail_url renders Meta preview;
+  // object_story_spec carries source image/video for fallback rendering.
+  const fields = [
+    'id', 'name', 'adset_id', 'campaign_id', 'effective_status', 'status', 'created_time',
+    'creative{id,name,thumbnail_url,image_url,video_id,object_story_spec{page_id,link_data{message,name,description,call_to_action,picture,link},video_data{message,title,image_url,video_id,call_to_action}}}',
+  ].join(',');
   const id = accountId.startsWith('act_') ? accountId : `act_${accountId}`;
   const r = await metaGet(`/${id}/ads`, { fields, limit: 500 });
   return r.data;

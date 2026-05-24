@@ -1,15 +1,39 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { Sidebar } from '@/components/Sidebar';
 import { TopBar } from '@/components/TopBar';
-import { StatusBadge } from '@/components/StatusBadge';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { ToastStack } from '@/components/Toast';
 import { useToasts } from '@/lib/use-toasts';
 import { useAccount } from '@/lib/use-account';
-import { Play, Pause, Pencil, RefreshCw, Tag, Search, FileText } from 'lucide-react';
+import {
+  Play,
+  Pause,
+  Pencil,
+  RefreshCw,
+  Tag,
+  Search,
+  FileText,
+  LayoutGrid,
+  Rows,
+  Video,
+  ImageOff,
+  CheckCircle2,
+} from 'lucide-react';
 
+type CreativeStorySpec = {
+  link_data?: { message?: string; name?: string; description?: string; picture?: string };
+  video_data?: { message?: string; title?: string; image_url?: string; video_id?: string };
+};
+type Creative = {
+  id?: string;
+  name?: string;
+  thumbnail_url?: string;
+  image_url?: string;
+  video_id?: string;
+  object_story_spec?: CreativeStorySpec;
+};
 type Ad = {
   id: string;
   name: string;
@@ -17,9 +41,43 @@ type Ad = {
   effective_status: string;
   campaign_id: string;
   adset_id: string;
+  creative?: Creative;
+  created_time?: string;
 };
 
 const SUFFIX = ' | Claude';
+
+function previewUrl(ad: Ad): string | null {
+  const c = ad.creative;
+  if (!c) return null;
+  return (
+    c.thumbnail_url ||
+    c.image_url ||
+    c.object_story_spec?.link_data?.picture ||
+    c.object_story_spec?.video_data?.image_url ||
+    null
+  );
+}
+
+function previewKind(ad: Ad): 'video' | 'image' | 'none' {
+  const c = ad.creative;
+  if (!c) return 'none';
+  if (c.video_id || c.object_story_spec?.video_data?.video_id) return 'video';
+  if (previewUrl(ad)) return 'image';
+  return 'none';
+}
+
+function adCopy(ad: Ad): string {
+  const s = ad.creative?.object_story_spec;
+  return s?.link_data?.message || s?.video_data?.message || s?.link_data?.name || s?.video_data?.title || '';
+}
+
+function statusDot(s: string): 'success' | 'warning' | 'danger' | 'muted' {
+  if (s === 'ACTIVE') return 'success';
+  if (s === 'PAUSED') return 'muted';
+  if (s.includes('REJECTED') || s.includes('DISAPPROVED') || s.includes('ERROR')) return 'danger';
+  return 'warning';
+}
 
 export default function AdsPage() {
   const { account, setAccount } = useAccount();
@@ -27,6 +85,8 @@ export default function AdsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'PAUSED'>('ALL');
+  const [view, setView] = useState<'grid' | 'list'>('grid');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const { toasts, push, dismiss } = useToasts();
   const [confirm, setConfirm] = useState<null | { title: string; msg: string; action: () => Promise<void>; destructive?: boolean }>(null);
@@ -50,13 +110,28 @@ export default function AdsPage() {
     }
   }, [account]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
-  const filtered = rows.filter((a) => {
+  const filtered = useMemo(() => {
     const f = filter.toLowerCase();
-    if (!f) return true;
-    return a.name.toLowerCase().includes(f) || a.id.includes(f);
-  });
+    return rows.filter((a) => {
+      if (statusFilter === 'ACTIVE' && a.status !== 'ACTIVE') return false;
+      if (statusFilter === 'PAUSED' && a.status !== 'PAUSED') return false;
+      if (!f) return true;
+      return a.name.toLowerCase().includes(f) || a.id.includes(f);
+    });
+  }, [rows, filter, statusFilter]);
+
+  const counts = useMemo(
+    () => ({
+      total: rows.length,
+      active: rows.filter((r) => r.status === 'ACTIVE').length,
+      paused: rows.filter((r) => r.status === 'PAUSED').length,
+    }),
+    [rows]
+  );
 
   function toggleStatusOne(ad: Ad) {
     const next = ad.status === 'ACTIVE' ? 'PAUSED' : 'ACTIVE';
@@ -72,7 +147,11 @@ export default function AdsPage() {
         });
         const j = await r.json();
         if (j.error) throw new Error(j.error);
-        push(`Ad ${next === 'ACTIVE' ? 'activado' : 'pausado'}`, 'success');
+        if (j.status === 'pending') {
+          push('Activación encolada para aprobación', 'success');
+        } else {
+          push(`Ad ${next === 'ACTIVE' ? 'activado' : 'pausado'}`, 'success');
+        }
         load();
       },
     });
@@ -146,109 +225,346 @@ export default function AdsPage() {
       <Sidebar />
       <div className="flex-1 flex flex-col">
         <TopBar selected={account} onSelect={setAccount} />
-        <main className="flex-1 p-6 space-y-4">
-          <div className="flex items-center justify-between flex-wrap gap-3">
+        <main className="flex-1 px-8 py-8 max-w-[1600px] mx-auto w-full space-y-6">
+          {/* Header */}
+          <header className="flex items-end justify-between flex-wrap gap-4 fade-in">
             <div>
-              <h1 className="text-2xl font-bold text-slate-900">Anuncios</h1>
-              <p className="text-sm text-slate-500">{filtered.length} de {rows.length} anuncios</p>
+              <p className="text-[11px] uppercase tracking-[0.16em] text-[var(--fg-muted)] mb-1">Inventario creativo</p>
+              <h1 className="display text-5xl text-[var(--fg)]">Anuncios</h1>
+              <div className="flex items-center gap-5 mt-3 text-[12px] text-[var(--fg-muted)]">
+                <span className="flex items-center gap-1.5">
+                  <span className="dot dot-success" /> {counts.active} activos
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="dot dot-muted" /> {counts.paused} pausados
+                </span>
+                <span className="text-[var(--fg-faint)]">·</span>
+                <span className="font-[family-name:var(--font-mono)]">{counts.total} totales</span>
+              </div>
             </div>
+
             <div className="flex items-center gap-2">
+              {/* Status pills */}
+              <div className="flex items-center gap-px bg-[var(--surface)] border border-[var(--hairline)] rounded-md p-0.5">
+                {(['ALL', 'ACTIVE', 'PAUSED'] as const).map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => setStatusFilter(s)}
+                    className={`px-3 py-1.5 text-[11px] uppercase tracking-[0.1em] font-semibold rounded transition-colors ${
+                      statusFilter === s
+                        ? 'bg-[var(--bg-elevated-2)] text-[var(--fg)]'
+                        : 'text-[var(--fg-muted)] hover:text-[var(--fg-soft)]'
+                    }`}
+                  >
+                    {s === 'ALL' ? 'Todos' : s === 'ACTIVE' ? 'Activos' : 'Pausados'}
+                  </button>
+                ))}
+              </div>
+
               <div className="relative">
-                <Search size={14} className="absolute left-2 top-2.5 text-slate-400" />
+                <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--fg-muted)]" />
                 <input
                   type="text"
                   value={filter}
                   onChange={(e) => setFilter(e.target.value)}
                   placeholder="Buscar nombre o ID…"
-                  className="pl-7 pr-3 py-1.5 text-sm border border-[var(--color-border)] rounded focus:outline-none focus:border-[var(--color-primary)] w-56"
+                  className="pl-7 pr-3 py-1.5 text-sm bg-[var(--bg-deep)] border border-[var(--hairline)] rounded-md text-[var(--fg)] placeholder:text-[var(--fg-faint)] focus:outline-none focus:border-[var(--accent)] w-56"
                 />
               </div>
-              <button onClick={load} disabled={loading} className="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900">
-                <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+
+              {/* View toggle */}
+              <div className="flex items-center gap-px bg-[var(--surface)] border border-[var(--hairline)] rounded-md p-0.5">
+                <button
+                  onClick={() => setView('grid')}
+                  className={`p-1.5 rounded transition-colors ${
+                    view === 'grid' ? 'bg-[var(--bg-elevated-2)] text-[var(--fg)]' : 'text-[var(--fg-muted)] hover:text-[var(--fg-soft)]'
+                  }`}
+                  aria-label="Vista grid"
+                >
+                  <LayoutGrid size={14} />
+                </button>
+                <button
+                  onClick={() => setView('list')}
+                  className={`p-1.5 rounded transition-colors ${
+                    view === 'list' ? 'bg-[var(--bg-elevated-2)] text-[var(--fg)]' : 'text-[var(--fg-muted)] hover:text-[var(--fg-soft)]'
+                  }`}
+                  aria-label="Vista lista"
+                >
+                  <Rows size={14} />
+                </button>
+              </div>
+
+              <button
+                onClick={load}
+                disabled={loading}
+                className="btn-ghost px-3 py-1.5 rounded-md flex items-center gap-1.5 text-xs"
+                aria-label="Recargar"
+              >
+                <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
+                <span className="hidden sm:inline">Recargar</span>
               </button>
             </div>
-          </div>
+          </header>
 
+          {/* Bulk actions bar */}
           {selectedIds.size > 0 && (
-            <div className="bg-blue-50 border border-blue-200 rounded px-4 py-2 flex items-center justify-between">
-              <span className="text-sm text-blue-900 font-medium">{selectedIds.size} seleccionados</span>
+            <div className="card flex items-center justify-between px-5 py-3 fade-in">
+              <div className="flex items-center gap-3">
+                <CheckCircle2 size={15} className="text-[var(--accent)]" />
+                <span className="text-sm text-[var(--fg)] font-medium">{selectedIds.size} seleccionados</span>
+              </div>
               <div className="flex gap-2">
-                <button onClick={bulkLabelClaude} className="flex items-center gap-1 text-xs bg-[var(--color-primary)] text-white px-3 py-1.5 rounded hover:bg-blue-800">
+                <button onClick={bulkLabelClaude} className="btn-primary flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md">
                   <Tag size={12} /> Aplicar | Claude
                 </button>
-                <button onClick={() => setSelectedIds(new Set())} className="text-xs text-slate-600 px-2">Limpiar</button>
+                <button onClick={() => setSelectedIds(new Set())} className="btn-ghost text-xs px-3 py-1.5 rounded-md">
+                  Limpiar
+                </button>
               </div>
             </div>
           )}
 
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">{error}</div>
+            <div className="card border-[var(--danger)]/30 bg-[oklch(0.65_0.20_25_/_0.08)] text-[var(--danger)] px-4 py-3 text-sm">
+              {error}
+            </div>
           )}
 
-          <div className="bg-white border border-[var(--color-border)] rounded overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-[var(--color-muted)]">
-                  <tr className="text-xs uppercase tracking-wider text-slate-600">
-                    <th className="px-3 py-2 w-10">
-                      <input
-                        type="checkbox"
-                        checked={filtered.length > 0 && selectedIds.size === filtered.length}
-                        onChange={toggleSelectAll}
-                      />
-                    </th>
-                    <th className="px-4 py-2 text-left">Anuncio</th>
-                    <th className="px-4 py-2 text-left">Estado</th>
-                    <th className="px-4 py-2 text-right">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.length === 0 && !loading && (
-                    <tr><td colSpan={4} className="px-4 py-8 text-center text-slate-400">Sin anuncios</td></tr>
-                  )}
-                  {filtered.map((a) => (
-                    <tr key={a.id} className="border-t border-slate-100 hover:bg-slate-50">
-                      <td className="px-3 py-2">
-                        <input type="checkbox" checked={selectedIds.has(a.id)} onChange={() => toggleSelect(a.id)} />
-                      </td>
-                      <td className="px-4 py-2">
-                        <div className="font-medium text-slate-800">{a.name}</div>
-                        <div className="text-[11px] text-slate-400 font-mono">{a.id} · adset {a.adset_id}</div>
-                      </td>
-                      <td className="px-4 py-2">
-                        <StatusBadge status={a.effective_status} />
-                      </td>
-                      <td className="px-4 py-2">
-                        <div className="flex justify-end gap-1">
-                          <button
-                            onClick={() => toggleStatusOne(a)}
-                            className="p-1.5 rounded hover:bg-slate-100 text-slate-600"
-                            title={a.status === 'ACTIVE' ? 'Pausar' : 'Activar'}
-                          >
-                            {a.status === 'ACTIVE' ? <Pause size={14} /> : <Play size={14} />}
-                          </button>
+          {/* Loading skeleton */}
+          {loading && rows.length === 0 && (
+            <div className={view === 'grid' ? 'grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4' : 'space-y-2'}>
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="card animate-pulse">
+                  <div className="aspect-square bg-[var(--bg-elevated-2)] rounded-t-md" />
+                  <div className="p-4 space-y-2">
+                    <div className="h-3 bg-[var(--bg-elevated-2)] rounded w-3/4" />
+                    <div className="h-2 bg-[var(--bg-elevated-2)] rounded w-1/2" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Empty state */}
+          {!loading && filtered.length === 0 && (
+            <div className="card py-20 text-center fade-in">
+              <ImageOff size={36} className="mx-auto text-[var(--fg-faint)] mb-3" />
+              <div className="display text-2xl text-[var(--fg-soft)] mb-1">Sin anuncios</div>
+              <p className="text-sm text-[var(--fg-muted)]">
+                {filter || statusFilter !== 'ALL'
+                  ? 'Cambiá filtros o limpiá búsqueda.'
+                  : 'Esta cuenta no tiene anuncios todavía.'}
+              </p>
+            </div>
+          )}
+
+          {/* GRID view */}
+          {!loading && view === 'grid' && filtered.length > 0 && (
+            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 stagger">
+              {filtered.map((a) => {
+                const url = previewUrl(a);
+                const kind = previewKind(a);
+                const copy = adCopy(a);
+                const selected = selectedIds.has(a.id);
+                return (
+                  <article
+                    key={a.id}
+                    className={`card overflow-hidden group transition-all duration-200 ${
+                      selected ? 'ring-2 ring-[var(--accent)] border-[var(--accent)]' : 'hover:border-[var(--border-strong)]'
+                    }`}
+                  >
+                    {/* Preview */}
+                    <div className="relative aspect-square bg-[var(--bg-deep)] overflow-hidden">
+                      {url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={url}
+                          alt={a.name}
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center gap-1.5 text-[var(--fg-faint)]">
+                          <ImageOff size={28} />
+                          <span className="text-[10px] uppercase tracking-[0.14em]">Sin preview</span>
+                        </div>
+                      )}
+
+                      {kind === 'video' && (
+                        <span className="absolute top-2 left-2 flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-black/70 text-white text-[10px] backdrop-blur-sm">
+                          <Video size={10} /> Video
+                        </span>
+                      )}
+
+                      <div className="absolute top-2 right-2">
+                        <input
+                          type="checkbox"
+                          checked={selected}
+                          onChange={() => toggleSelect(a.id)}
+                          className="w-4 h-4 accent-[var(--accent)] cursor-pointer"
+                          onClick={(e) => e.stopPropagation()}
+                          aria-label="Seleccionar"
+                        />
+                      </div>
+
+                      <div className="absolute bottom-2 left-2 flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-black/70 backdrop-blur-sm">
+                        <span className={`dot dot-${statusDot(a.effective_status)}`} />
+                        <span className="text-[10px] uppercase tracking-wider text-white font-medium">
+                          {a.effective_status}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Body */}
+                    <div className="p-4 space-y-3">
+                      <div>
+                        <h3 className="text-sm font-medium text-[var(--fg)] truncate" title={a.name}>
+                          {a.name}
+                        </h3>
+                        <div className="text-[10px] font-[family-name:var(--font-mono)] text-[var(--fg-faint)] mt-0.5">
+                          {a.id}
+                        </div>
+                      </div>
+
+                      {copy && (
+                        <p className="text-[12px] text-[var(--fg-muted)] line-clamp-2 leading-snug">{copy}</p>
+                      )}
+
+                      <div className="flex items-center justify-between pt-2 border-t border-[var(--hairline)]">
+                        <button
+                          onClick={() => toggleStatusOne(a)}
+                          className="flex items-center gap-1.5 text-[11px] text-[var(--fg-soft)] hover:text-[var(--fg)] transition-colors"
+                          title={a.status === 'ACTIVE' ? 'Pausar' : 'Activar'}
+                        >
+                          {a.status === 'ACTIVE' ? <Pause size={12} /> : <Play size={12} />}
+                          {a.status === 'ACTIVE' ? 'Pausar' : 'Activar'}
+                        </button>
+                        <div className="flex gap-px">
                           <button
                             onClick={() => setRenameModal({ id: a.id, current: a.name })}
-                            className="p-1.5 rounded hover:bg-slate-100 text-slate-600"
+                            className="p-1.5 rounded hover:bg-[var(--surface)] text-[var(--fg-muted)] hover:text-[var(--fg)] transition-colors"
                             title="Renombrar"
                           >
-                            <Pencil size={14} />
+                            <Pencil size={12} />
                           </button>
                           <button
                             onClick={() => setSwapModal({ ad: a })}
-                            className="p-1.5 rounded hover:bg-slate-100 text-slate-600"
+                            className="p-1.5 rounded hover:bg-[var(--surface)] text-[var(--fg-muted)] hover:text-[var(--fg)] transition-colors"
                             title="Cambiar lead form"
                           >
-                            <FileText size={14} />
+                            <FileText size={12} />
                           </button>
                         </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
             </div>
-          </div>
+          )}
+
+          {/* LIST view */}
+          {!loading && view === 'list' && filtered.length > 0 && (
+            <div className="card overflow-hidden fade-in">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-[10px] uppercase tracking-[0.14em] text-[var(--fg-muted)] font-semibold border-b border-[var(--hairline)]">
+                      <th className="px-4 py-3 w-10">
+                        <input
+                          type="checkbox"
+                          checked={filtered.length > 0 && selectedIds.size === filtered.length}
+                          onChange={toggleSelectAll}
+                          className="accent-[var(--accent)] cursor-pointer"
+                        />
+                      </th>
+                      <th className="py-3 w-16" />
+                      <th className="px-4 py-3 text-left">Anuncio</th>
+                      <th className="px-4 py-3 text-left">Estado</th>
+                      <th className="px-4 py-3 text-right">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filtered.map((a) => {
+                      const url = previewUrl(a);
+                      const kind = previewKind(a);
+                      return (
+                        <tr
+                          key={a.id}
+                          className="border-t border-[var(--hairline)] hover:bg-[var(--surface)] transition-colors"
+                        >
+                          <td className="px-4 py-3">
+                            <input
+                              type="checkbox"
+                              checked={selectedIds.has(a.id)}
+                              onChange={() => toggleSelect(a.id)}
+                              className="accent-[var(--accent)] cursor-pointer"
+                            />
+                          </td>
+                          <td className="py-2">
+                            <div className="w-14 h-14 rounded bg-[var(--bg-deep)] overflow-hidden border border-[var(--hairline)] relative">
+                              {url ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img src={url} alt="" className="w-full h-full object-cover" loading="lazy" />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-[var(--fg-faint)]">
+                                  <ImageOff size={16} />
+                                </div>
+                              )}
+                              {kind === 'video' && (
+                                <span className="absolute bottom-0 right-0 bg-black/70 text-white p-0.5 rounded-tl">
+                                  <Video size={9} />
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="text-[var(--fg)] font-medium truncate max-w-xs">{a.name}</div>
+                            <div className="text-[10px] font-[family-name:var(--font-mono)] text-[var(--fg-faint)] mt-0.5">
+                              {a.id}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-1.5">
+                              <span className={`dot dot-${statusDot(a.effective_status)}`} />
+                              <span className="text-[11px] uppercase tracking-wider text-[var(--fg-soft)]">
+                                {a.effective_status}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex justify-end gap-px">
+                              <button
+                                onClick={() => toggleStatusOne(a)}
+                                className="p-1.5 rounded hover:bg-[var(--bg-elevated-2)] text-[var(--fg-muted)] hover:text-[var(--fg)] transition-colors"
+                                title={a.status === 'ACTIVE' ? 'Pausar' : 'Activar'}
+                              >
+                                {a.status === 'ACTIVE' ? <Pause size={13} /> : <Play size={13} />}
+                              </button>
+                              <button
+                                onClick={() => setRenameModal({ id: a.id, current: a.name })}
+                                className="p-1.5 rounded hover:bg-[var(--bg-elevated-2)] text-[var(--fg-muted)] hover:text-[var(--fg)] transition-colors"
+                                title="Renombrar"
+                              >
+                                <Pencil size={13} />
+                              </button>
+                              <button
+                                onClick={() => setSwapModal({ ad: a })}
+                                className="p-1.5 rounded hover:bg-[var(--bg-elevated-2)] text-[var(--fg-muted)] hover:text-[var(--fg)] transition-colors"
+                                title="Cambiar lead form"
+                              >
+                                <FileText size={13} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </main>
       </div>
 
@@ -282,7 +598,11 @@ export default function AdsPage() {
           ad={swapModal.ad}
           accountId={account}
           onCancel={() => setSwapModal(null)}
-          onDone={(msg, type) => { push(msg, type); setSwapModal(null); load(); }}
+          onDone={(msg, type) => {
+            push(msg, type);
+            setSwapModal(null);
+            load();
+          }}
         />
       )}
 
@@ -304,7 +624,7 @@ function SwapFormModal({
 }) {
   const [pages, setPages] = useState<Array<{ id: string; name: string }>>([]);
   const [pageId, setPageId] = useState('');
-  const [forms, setForms] = useState<Array<{ id: string; name: string; leads_count?: number; status?: string }>>([]);
+  const [forms, setForms] = useState<Array<{ id: string; name: string; leads_count?: number; status?: string; created_time?: string }>>([]);
   const [selectedForm, setSelectedForm] = useState('');
   const [loadingPages, setLoadingPages] = useState(false);
   const [loadingForms, setLoadingForms] = useState(false);
@@ -332,7 +652,13 @@ function SwapFormModal({
       .then((r) => r.json())
       .then((j) => {
         if (j.error) onDone(j.error, 'error');
-        else setForms((j.data || []).sort((a: { created_time?: string }, b: { created_time?: string }) => (b.created_time || '').localeCompare(a.created_time || '')));
+        else
+          setForms(
+            (j.data || []).sort(
+              (a: { created_time?: string }, b: { created_time?: string }) =>
+                (b.created_time || '').localeCompare(a.created_time || '')
+            )
+          );
       })
       .finally(() => setLoadingForms(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -358,52 +684,62 @@ function SwapFormModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onCancel}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onCancel}>
       <div
-        className="bg-white rounded-lg shadow-xl max-w-lg w-full mx-4 p-6 border border-[var(--color-border)] max-h-[80vh] overflow-y-auto"
+        className="card max-w-lg w-full mx-4 p-6 max-h-[80vh] overflow-y-auto shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 className="text-base font-semibold text-slate-900 mb-1">Cambiar Lead Form</h3>
-        <p className="text-xs text-slate-500 mb-4">Ad: {ad.name}</p>
+        <h3 className="display text-2xl text-[var(--fg)] mb-1">Cambiar Lead Form</h3>
+        <p className="text-xs text-[var(--fg-muted)] mb-5">Ad: {ad.name}</p>
 
-        <label className="text-xs font-semibold uppercase tracking-wider text-slate-500">Página</label>
+        <label className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--fg-muted)]">Página</label>
         <select
           value={pageId}
           onChange={(e) => setPageId(e.target.value)}
           disabled={loadingPages}
-          className="w-full mt-1 px-3 py-2 border border-[var(--color-border)] rounded text-sm bg-white"
+          className="w-full mt-1.5 px-3 py-2 bg-[var(--bg-deep)] border border-[var(--hairline)] rounded-md text-sm text-[var(--fg)]"
         >
           {pages.map((p) => (
-            <option key={p.id} value={p.id}>{p.name} ({p.id})</option>
+            <option key={p.id} value={p.id}>
+              {p.name} ({p.id})
+            </option>
           ))}
         </select>
 
-        <label className="text-xs font-semibold uppercase tracking-wider text-slate-500 mt-4 block">Lead Form ({forms.length})</label>
-        <div className="border border-[var(--color-border)] rounded mt-1 max-h-72 overflow-y-auto">
-          {loadingForms && <div className="p-3 text-sm text-slate-500">Cargando forms…</div>}
+        <label className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--fg-muted)] mt-5 block">
+          Lead Form ({forms.length})
+        </label>
+        <div className="border border-[var(--hairline)] rounded-md mt-1.5 max-h-72 overflow-y-auto bg-[var(--bg-deep)]">
+          {loadingForms && <div className="p-3 text-sm text-[var(--fg-muted)]">Cargando forms…</div>}
           {!loadingForms && forms.length === 0 && (
-            <div className="p-3 text-sm text-slate-400">Sin forms</div>
+            <div className="p-3 text-sm text-[var(--fg-faint)]">Sin forms</div>
           )}
           {forms.map((f) => (
             <button
               key={f.id}
               onClick={() => setSelectedForm(f.id)}
-              className={`w-full text-left px-3 py-2 border-b border-slate-100 text-sm hover:bg-slate-50 ${
-                selectedForm === f.id ? 'bg-blue-50 border-l-2 border-l-[var(--color-primary)]' : ''
+              className={`w-full text-left px-3 py-2 border-b border-[var(--hairline)] text-sm transition-colors ${
+                selectedForm === f.id
+                  ? 'bg-[var(--accent-soft)] text-[var(--fg)]'
+                  : 'text-[var(--fg-soft)] hover:bg-[var(--surface)]'
               }`}
             >
-              <div className="font-medium text-slate-800">{f.name}</div>
-              <div className="text-[11px] text-slate-400 font-mono">{f.id} · {f.leads_count || 0} leads · {f.status}</div>
+              <div className="font-medium">{f.name}</div>
+              <div className="text-[10px] font-[family-name:var(--font-mono)] text-[var(--fg-faint)]">
+                {f.id} · {f.leads_count || 0} leads · {f.status}
+              </div>
             </button>
           ))}
         </div>
 
-        <div className="flex justify-end gap-2 mt-5">
-          <button onClick={onCancel} disabled={saving} className="px-3 py-1.5 rounded text-sm border border-[var(--color-border)] hover:bg-slate-50">Cancelar</button>
+        <div className="flex justify-end gap-2 mt-6">
+          <button onClick={onCancel} disabled={saving} className="btn-ghost px-3 py-1.5 rounded-md text-sm">
+            Cancelar
+          </button>
           <button
             onClick={swap}
             disabled={!selectedForm || saving}
-            className="px-3 py-1.5 rounded text-sm font-medium text-white bg-[var(--color-primary)] hover:bg-blue-800 disabled:opacity-50"
+            className="btn-primary px-4 py-1.5 rounded-md text-sm disabled:opacity-40"
           >
             {saving ? 'Aplicando…' : 'Aplicar swap'}
           </button>
@@ -425,25 +761,34 @@ function RenameModal({
   const [name, setName] = useState(current);
   const [appendSuffix, setAppendSuffix] = useState(true);
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onCancel}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onCancel}>
       <div
-        className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6 border border-[var(--color-border)]"
+        className="card max-w-md w-full mx-4 p-6 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 className="text-base font-semibold text-slate-900 mb-3">Renombrar anuncio</h3>
+        <h3 className="display text-2xl text-[var(--fg)] mb-4">Renombrar anuncio</h3>
         <input
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="w-full px-3 py-2 border border-[var(--color-border)] rounded text-sm focus:outline-none focus:border-[var(--color-primary)]"
+          className="w-full px-3 py-2 bg-[var(--bg-deep)] border border-[var(--hairline)] rounded-md text-sm text-[var(--fg)] focus:outline-none focus:border-[var(--accent)]"
         />
-        <label className="flex items-center gap-2 mt-3 text-sm text-slate-600">
-          <input type="checkbox" checked={appendSuffix} onChange={(e) => setAppendSuffix(e.target.checked)} />
-          Agregar sufijo <span className="font-mono">| Claude</span>
+        <label className="flex items-center gap-2 mt-3 text-sm text-[var(--fg-soft)]">
+          <input
+            type="checkbox"
+            checked={appendSuffix}
+            onChange={(e) => setAppendSuffix(e.target.checked)}
+            className="accent-[var(--accent)]"
+          />
+          Agregar sufijo <span className="font-[family-name:var(--font-mono)] text-[var(--fg)]">| Claude</span>
         </label>
-        <div className="flex justify-end gap-2 mt-5">
-          <button onClick={onCancel} className="px-3 py-1.5 rounded text-sm border border-[var(--color-border)] hover:bg-slate-50">Cancelar</button>
-          <button onClick={() => onConfirm(name, appendSuffix)} className="px-3 py-1.5 rounded text-sm font-medium text-white bg-[var(--color-primary)] hover:bg-blue-800">Guardar</button>
+        <div className="flex justify-end gap-2 mt-6">
+          <button onClick={onCancel} className="btn-ghost px-3 py-1.5 rounded-md text-sm">
+            Cancelar
+          </button>
+          <button onClick={() => onConfirm(name, appendSuffix)} className="btn-primary px-4 py-1.5 rounded-md text-sm">
+            Guardar
+          </button>
         </div>
       </div>
     </div>

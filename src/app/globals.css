@@ -175,3 +175,29 @@ body {
 .dot-warning { background: var(--warning); box-shadow: 0 0 8px var(--warning); }
 .dot-danger { background: var(--danger); box-shadow: 0 0 8px var(--danger); }
 .dot-muted { background: var(--fg-faint); }
+
+/* Line clamp helpers */
+.line-clamp-1 { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+.line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.line-clamp-3 { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* Smooth scroll + tabular figures globally for data tables */
+html { scroll-behavior: smooth; }
+table { font-variant-numeric: tabular-nums; }
+
+/* Page enter animation */
+@keyframes blur-in {
+  from { opacity: 0; filter: blur(4px); transform: translateY(6px); }
+  to { opacity: 1; filter: blur(0); transform: translateY(0); }
+}
+main { animation: blur-in 500ms var(--ease-out-expo) both; }
+
+/* Refined card hover */
+.card { transition: border-color 220ms var(--ease-out), background 220ms var(--ease-out); }
+
+/* Pulse for live indicators */
+@keyframes soft-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+.animate-pulse { animation: soft-pulse 2s ease-in-out infinite; }
