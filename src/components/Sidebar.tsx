@@ -10,6 +10,7 @@ import {
   Wallet,
   BarChart3,
   Settings,
+  Sparkles,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -26,17 +27,19 @@ const NAV = [
 export function Sidebar() {
   const pathname = usePathname();
   return (
-    <aside className="hidden md:flex w-60 shrink-0 flex-col border-r border-[var(--color-border)] bg-white">
-      <div className="px-5 py-5 border-b border-[var(--color-border)]">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded bg-[var(--color-primary)] grid place-items-center text-white font-bold text-sm">
+    <aside className="hidden md:flex w-60 shrink-0 flex-col border-r border-[var(--border)] bg-[var(--bg-elevated)]/50 backdrop-blur-xl relative z-10">
+      <div className="px-5 py-5 border-b border-[var(--border)]">
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#6A77E0] to-[#3B47A8] flex items-center justify-center text-white font-black text-sm shadow-[0_4px_16px_rgba(94,106,210,0.45)]">
             C
           </div>
-          <div className="font-semibold text-[15px] text-[var(--color-primary)]">Croman Ads</div>
+          <div>
+            <div className="font-bold text-[15px] text-white leading-tight">Croman Ads</div>
+            <div className="text-[10px] uppercase tracking-wider text-[var(--fg-muted)] mt-0.5">Santa Rosa PY</div>
+          </div>
         </div>
-        <div className="text-[11px] uppercase tracking-wider text-slate-500 mt-3">Santa Rosa PY</div>
       </div>
-      <nav className="flex-1 px-2 py-3 space-y-0.5">
+      <nav className="flex-1 px-2.5 py-3 space-y-0.5">
         {NAV.map(({ href, label, icon: Icon }) => {
           const active = pathname === href || (href !== '/' && pathname.startsWith(href));
           return (
@@ -44,20 +47,31 @@ export function Sidebar() {
               key={href}
               href={href}
               className={cn(
-                'flex items-center gap-3 px-3 py-2 rounded text-sm transition-colors duration-150',
+                'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200 relative group',
                 active
-                  ? 'bg-[var(--color-primary)] text-white'
-                  : 'text-slate-700 hover:bg-[var(--color-muted)]'
+                  ? 'bg-gradient-to-r from-[#5E6AD2]/20 to-[#5E6AD2]/5 text-white border border-[var(--color-primary)]/30'
+                  : 'text-[var(--fg-muted)] hover:text-white hover:bg-white/[0.04]'
               )}
             >
-              <Icon size={16} />
-              <span>{label}</span>
+              {active && (
+                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 rounded-r bg-[var(--color-primary)] shadow-[0_0_12px_var(--color-primary)]" />
+              )}
+              <Icon size={16} className={active ? 'text-[var(--color-primary)]' : ''} />
+              <span className="font-medium">{label}</span>
             </Link>
           );
         })}
       </nav>
-      <div className="px-3 py-3 border-t border-[var(--color-border)] text-[11px] text-slate-500">
-        v0.1 · {new Date().getFullYear()}
+      <div className="px-3 py-3 border-t border-[var(--border)]">
+        <div className="rounded-lg bg-gradient-to-br from-[#5E6AD2]/10 to-transparent border border-[var(--border)] p-3">
+          <div className="flex items-center gap-1.5 text-[11px] font-semibold text-white mb-1">
+            <Sparkles size={12} className="text-[var(--color-accent)]" />
+            v1.0
+          </div>
+          <div className="text-[10px] text-[var(--fg-muted)] leading-relaxed">
+            Phase 5 · Auth + UI premium
+          </div>
+        </div>
       </div>
     </aside>
   );

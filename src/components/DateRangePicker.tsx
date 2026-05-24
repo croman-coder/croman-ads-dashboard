@@ -40,21 +40,21 @@ export function DateRangePicker({ value, onChange }: Props) {
   const [preset, setPreset] = useState('last_30d');
   return (
     <div className="flex items-center gap-2">
-      <Calendar size={14} className="text-slate-500" />
+      <Calendar size={14} className="text-[var(--fg-muted)]" />
       <select
         value={preset}
         onChange={(e) => {
           setPreset(e.target.value);
           onChange(calcRange(e.target.value));
         }}
-        className="bg-white border border-[var(--color-border)] rounded text-sm px-2 py-1.5 cursor-pointer focus:outline-none focus:border-[var(--color-primary)]"
+        className="bg-[var(--surface)] border border-[var(--border)] rounded-lg text-sm text-white px-3 py-1.5 cursor-pointer focus:outline-none focus:border-[var(--color-primary)] hover:border-[var(--color-primary)]/50 transition-colors"
       >
         {PRESETS.map((p) => (
-          <option key={p.value} value={p.value}>{p.label}</option>
+          <option key={p.value} value={p.value} className="bg-[var(--bg-elevated)]">{p.label}</option>
         ))}
       </select>
       {value.since && value.until && (
-        <span className="text-xs text-slate-500 font-mono hidden lg:inline">
+        <span className="text-xs text-[var(--fg-muted)] font-mono hidden lg:inline">
           {value.since} → {value.until}
         </span>
       )}
