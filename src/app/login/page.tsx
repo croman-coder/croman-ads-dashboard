@@ -42,12 +42,15 @@ function LoginForm() {
 
   return (
     <div className="min-h-screen grid lg:grid-cols-2">
-      {/* Left — editorial cover */}
-      <div className="hidden lg:flex flex-col justify-between bg-[var(--bg-elevated)] p-12 border-r border-[var(--hairline)] relative overflow-hidden">
+      {/* Left — editorial cover with vivid aurora wash */}
+      <div className="hidden lg:flex flex-col justify-between p-12 border-r border-[var(--hairline)] relative overflow-hidden"
+           style={{ background: 'linear-gradient(135deg, #fafaf6 0%, #ffffff 60%, oklch(0.52 0.22 278 / 0.06) 100%)' }}>
+        <div className="absolute inset-0 pointer-events-none"
+             style={{ backgroundImage: 'radial-gradient(ellipse 60% 50% at 100% 0%, oklch(0.62 0.26 330 / 0.15), transparent 60%), radial-gradient(ellipse 60% 50% at 0% 100%, oklch(0.72 0.18 200 / 0.12), transparent 60%)' }} />
         <div className="relative z-10">
-          <div className="flex items-center gap-3">
+          <div className="bg-[var(--fg)] inline-flex px-3 py-2 rounded-md">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo.png" alt="Santa Rosa" className="h-9 w-auto object-contain" />
+            <img src="/logo.png" alt="Santa Rosa" className="h-7 w-auto object-contain" />
           </div>
         </div>
         <div className="relative z-10">
@@ -69,9 +72,9 @@ function LoginForm() {
       {/* Right — form */}
       <div className="flex items-center justify-center px-6 py-12">
         <div className="w-full max-w-sm fade-in">
-          <div className="lg:hidden mb-8 flex items-center gap-3">
+          <div className="lg:hidden mb-8 bg-[var(--fg)] inline-flex px-3 py-2 rounded-md">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo.png" alt="Santa Rosa" className="h-9 w-auto object-contain" />
+            <img src="/logo.png" alt="Santa Rosa" className="h-7 w-auto object-contain" />
           </div>
 
           <p className="text-[11px] uppercase tracking-[0.16em] text-[var(--fg-muted)] mb-2">Acceso</p>

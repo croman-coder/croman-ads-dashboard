@@ -101,14 +101,14 @@ export async function listCampaigns(accountId: string) {
 }
 
 export async function listAds(accountId: string) {
-  // Expand creative for previews: thumbnail_url renders Meta preview;
-  // object_story_spec carries source image/video for fallback rendering.
+  // Slim creative fields to avoid "Please reduce the amount of data" 500 from Graph API.
+  // Only ask for the URLs we actually render in the preview grid.
   const fields = [
     'id', 'name', 'adset_id', 'campaign_id', 'effective_status', 'status', 'created_time',
-    'creative{id,name,thumbnail_url,image_url,video_id,object_story_spec{page_id,link_data{message,name,description,call_to_action,picture,link},video_data{message,title,image_url,video_id,call_to_action}}}',
+    'creative{id,thumbnail_url,image_url,video_id}',
   ].join(',');
   const id = accountId.startsWith('act_') ? accountId : `act_${accountId}`;
-  const r = await metaGet(`/${id}/ads`, { fields, limit: 500 });
+  const r = await metaGet(`/${id}/ads`, { fields, limit: 100 });
   return r.data;
 }
 

@@ -6,14 +6,25 @@ interface Props {
   hint?: string;
   trend?: 'up' | 'down' | 'flat';
   trendValue?: string;
-  accent?: 'primary' | 'success' | 'warning' | 'destructive';
+  accent?: 'primary' | 'success' | 'warning' | 'destructive' | 'data' | 'amber';
 }
+
+const WASH = {
+  primary: 'bg-indigo-wash',
+  success: 'bg-lime-wash',
+  warning: 'bg-amber-wash',
+  destructive: 'bg-coral-wash',
+  data: 'bg-cyan-wash',
+  amber: 'bg-amber-wash',
+} as const;
 
 const ACCENT_COLOR = {
   primary: 'text-[var(--accent)]',
   success: 'text-[var(--success)]',
   warning: 'text-[var(--warning)]',
   destructive: 'text-[var(--danger)]',
+  data: 'text-[oklch(0.52_0.18_200)]',
+  amber: 'text-[oklch(0.62_0.20_75)]',
 } as const;
 
 const DOT_COLOR = {
@@ -21,29 +32,29 @@ const DOT_COLOR = {
   success: 'bg-[var(--success)]',
   warning: 'bg-[var(--warning)]',
   destructive: 'bg-[var(--danger)]',
+  data: 'bg-[oklch(0.72_0.18_200)]',
+  amber: 'bg-[oklch(0.78_0.16_75)]',
 } as const;
 
 export function KpiCard({ label, value, hint, trend, trendValue, accent = 'primary' }: Props) {
   return (
-    <div className="card p-5">
-      <div className="flex items-center gap-2 mb-3">
+    <div className={cn('card lift p-5 relative overflow-hidden', WASH[accent])}>
+      <div className="flex items-center gap-2 mb-3 relative">
         <span className={cn('w-1.5 h-1.5 rounded-full', DOT_COLOR[accent])} />
-        <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--fg-muted)]">
-          {label}
-        </span>
+        <span className="eyebrow">{label}</span>
       </div>
-      <div className="numeric text-4xl font-semibold text-[var(--fg)]">
+      <div className={cn('numeric text-[34px] leading-none font-semibold tracking-tight', ACCENT_COLOR[accent])}>
         {value}
       </div>
       {(hint || trendValue) && (
-        <div className="text-xs text-[var(--fg-muted)] mt-2 flex items-center gap-2">
+        <div className="text-[11px] text-[var(--fg-muted)] mt-3 flex items-center gap-2">
           {trendValue && (
             <span
               className={cn(
-                'font-semibold flex items-center gap-0.5',
-                trend === 'up' && 'text-[var(--success)]',
-                trend === 'down' && 'text-[var(--danger)]',
-                trend === 'flat' && 'text-[var(--fg-muted)]'
+                'font-semibold inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px]',
+                trend === 'up' && 'bg-[oklch(0.58_0.20_152_/_0.12)] text-[var(--success)]',
+                trend === 'down' && 'bg-[oklch(0.58_0.24_22_/_0.12)] text-[var(--danger)]',
+                trend === 'flat' && 'bg-[var(--surface)] text-[var(--fg-muted)]'
               )}
             >
               {trend === 'up' && '↑'} {trend === 'down' && '↓'} {trendValue}

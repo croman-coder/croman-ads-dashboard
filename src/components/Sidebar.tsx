@@ -63,15 +63,17 @@ export function Sidebar() {
   const approvalCount = useApprovalCount();
 
   return (
-    <aside className="hidden md:flex w-60 shrink-0 flex-col border-r border-[var(--hairline)] bg-[var(--bg-base)] relative z-10">
+    <aside className="hidden md:flex w-60 shrink-0 flex-col border-r border-[var(--hairline)] bg-[var(--bg-base)]/85 backdrop-blur-md relative z-10">
       <div className="px-5 py-5 border-b border-[var(--hairline)]">
         <Link href="/" className="flex items-center gap-3 group">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/logo.png"
-            alt="Santa Rosa"
-            className="h-7 w-auto object-contain opacity-95 group-hover:opacity-100 transition-opacity"
-          />
+          <div className="bg-[var(--fg)] px-3 py-2 rounded-md transition-transform group-hover:scale-[1.02]">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo.png"
+              alt="Santa Rosa"
+              className="h-5 w-auto object-contain"
+            />
+          </div>
         </Link>
         <div className="eyebrow mt-3">Croman Ads</div>
       </div>

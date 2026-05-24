@@ -226,38 +226,64 @@ export default function Dashboard() {
 
           <section className="grid grid-cols-1 lg:grid-cols-2 gap-5 stagger">
             <div className="card p-6">
-              <div className="flex items-baseline justify-between mb-4">
-                <h2 className="display text-2xl text-[var(--fg)]">Gasto por campaña</h2>
-                <span className="text-[10px] uppercase tracking-[0.16em] text-[var(--fg-muted)]">Top 10 · USD</span>
+              <div className="flex items-baseline justify-between mb-5">
+                <h2 className="display text-3xl">Gasto por campaña</h2>
+                <span className="eyebrow">Top 10 · USD</span>
               </div>
               <div style={{ width: '100%', height: 320 }}>
                 <ResponsiveContainer>
                   <BarChart data={chartData} layout="vertical" margin={{ left: 60 }}>
-                    <CartesianGrid strokeDasharray="2 4" stroke="#26262e" />
-                    <XAxis type="number" tick={{ fontSize: 11, fill: '#7e7e88' }} />
-                    <YAxis dataKey="name" type="category" width={150} tick={{ fontSize: 11, fill: '#c8c8d0' }} />
-                    <Tooltip contentStyle={{ fontSize: 12, borderRadius: 2, background: '#131318', border: '1px solid #3a3a44', color: '#f5f5f7' }} cursor={{ fill: 'oklch(0.66 0.22 252 / 0.10)' }} />
-                    <Bar dataKey="spend" name="Spend USD" fill="oklch(0.66 0.22 252)" radius={[0, 2, 2, 0]} />
+                    <defs>
+                      <linearGradient id="gSpend" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stopColor="oklch(0.52 0.22 278)" />
+                        <stop offset="100%" stopColor="oklch(0.62 0.26 330)" />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="2 4" stroke="#ededeb" />
+                    <XAxis type="number" tick={{ fontSize: 11, fill: '#6a6a74' }} axisLine={false} tickLine={false} />
+                    <YAxis dataKey="name" type="category" width={150} tick={{ fontSize: 11, fill: '#3a3a44' }} axisLine={false} tickLine={false} />
+                    <Tooltip
+                      contentStyle={{ fontSize: 12, borderRadius: 8, background: '#ffffff', border: '1px solid #e6e6e0', color: '#0a0a0c', boxShadow: '0 8px 24px rgba(10,10,12,0.10)' }}
+                      cursor={{ fill: 'oklch(0.52 0.22 278 / 0.06)' }}
+                    />
+                    <Bar dataKey="spend" name="Spend USD" fill="url(#gSpend)" radius={[0, 6, 6, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
             </div>
 
             <div className="card p-6">
-              <div className="flex items-baseline justify-between mb-4">
-                <h2 className="display text-2xl text-[var(--fg)]">CPL por campaña</h2>
-                <span className="text-[10px] uppercase tracking-[0.16em] text-[var(--fg-muted)]">USD por lead</span>
+              <div className="flex items-baseline justify-between mb-5">
+                <h2 className="display text-3xl">CPL por campaña</h2>
+                <span className="eyebrow">USD por lead</span>
               </div>
               <div style={{ width: '100%', height: 320 }}>
                 <ResponsiveContainer>
                   <BarChart data={chartData} layout="vertical" margin={{ left: 60 }}>
-                    <CartesianGrid strokeDasharray="2 4" stroke="#26262e" />
-                    <XAxis type="number" tick={{ fontSize: 11, fill: '#7e7e88' }} />
-                    <YAxis dataKey="name" type="category" width={150} tick={{ fontSize: 11, fill: '#c8c8d0' }} />
-                    <Tooltip contentStyle={{ fontSize: 12, borderRadius: 2, background: '#131318', border: '1px solid #3a3a44', color: '#f5f5f7' }} cursor={{ fill: 'oklch(0.66 0.22 252 / 0.10)' }} />
-                    <Bar dataKey="cpl" name="CPL USD" radius={[0, 2, 2, 0]}>
+                    <defs>
+                      <linearGradient id="gGood" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stopColor="oklch(0.78 0.18 130)" />
+                        <stop offset="100%" stopColor="oklch(0.58 0.20 152)" />
+                      </linearGradient>
+                      <linearGradient id="gMid" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stopColor="oklch(0.78 0.16 75)" />
+                        <stop offset="100%" stopColor="oklch(0.72 0.22 30)" />
+                      </linearGradient>
+                      <linearGradient id="gBad" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stopColor="oklch(0.62 0.26 330)" />
+                        <stop offset="100%" stopColor="oklch(0.58 0.24 22)" />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="2 4" stroke="#ededeb" />
+                    <XAxis type="number" tick={{ fontSize: 11, fill: '#6a6a74' }} axisLine={false} tickLine={false} />
+                    <YAxis dataKey="name" type="category" width={150} tick={{ fontSize: 11, fill: '#3a3a44' }} axisLine={false} tickLine={false} />
+                    <Tooltip
+                      contentStyle={{ fontSize: 12, borderRadius: 8, background: '#ffffff', border: '1px solid #e6e6e0', color: '#0a0a0c', boxShadow: '0 8px 24px rgba(10,10,12,0.10)' }}
+                      cursor={{ fill: 'oklch(0.52 0.22 278 / 0.06)' }}
+                    />
+                    <Bar dataKey="cpl" name="CPL USD" radius={[0, 6, 6, 0]}>
                       {chartData.map((d, i) => (
-                        <Cell key={i} fill={d.cpl > 5 ? 'oklch(0.65 0.25 18)' : d.cpl > 3 ? 'oklch(0.82 0.18 75)' : 'oklch(0.86 0.21 130)'} />
+                        <Cell key={i} fill={d.cpl > 5 ? 'url(#gBad)' : d.cpl > 3 ? 'url(#gMid)' : 'url(#gGood)'} />
                       ))}
                     </Bar>
                   </BarChart>
