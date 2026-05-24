@@ -39,6 +39,7 @@ Open http://localhost:3000
 | Route | Purpose |
 |---|---|
 | `/` | Dashboard — KPIs + campaigns table |
+| `/approvals` | Cola de aprobación de mutaciones risky |
 | `/campaigns` | Campaign editor (Phase 2) |
 | `/ads` | Ad creative management (Phase 3) |
 | `/audience` | Targeting editor (Phase 2) |

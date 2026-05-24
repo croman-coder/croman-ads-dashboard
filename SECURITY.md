@@ -169,3 +169,21 @@ filtrados):
 **Versión informe:** 1.0
 **Fecha:** mayo 2026
 **Autor:** Croman Ads · Santa Rosa Paraguay
+
+---
+
+## Approval workflow (Phase 6)
+
+All risky mutations require explicit approval before reaching Meta:
+
+- `set_budget`, `activate`, `create_campaign`, `duplicate_campaign`
+- Pending proposals stored in Postgres, expire in 72h
+- Vercel cron (`/api/proposals/expire`) clears stale entries every 6h
+- `SELECT FOR UPDATE` lock prevents double-approve race
+- All status transitions audit-logged (proposed_by, decided_by, decided_at)
+- Payload re-validated at execute time (cap, IDs, fields)
+- Snapshot of current state captured at propose time
+
+Required env vars:
+- `POSTGRES_URL`, `POSTGRES_PRISMA_URL`, `POSTGRES_URL_NON_POOLING` (auto by Vercel Postgres)
+- `CRON_SECRET` — random 32+ chars, bearer-auth for cron endpoint

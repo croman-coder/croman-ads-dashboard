@@ -64,11 +64,21 @@ export default function CampaignsPage() {
         const r = await fetch('/api/mutation/status', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ object_id: c.id, status: next }),
+          body: JSON.stringify({
+            object_id: c.id,
+            status: next,
+            account_id: account,
+            scope_name: c.name,
+            scope: 'campaign',
+          }),
         });
         const j = await r.json();
-        if (j.error) throw new Error(j.error);
-        push(`Campaña ${next === 'ACTIVE' ? 'activada' : 'pausada'}`, 'success');
+        if (!r.ok && r.status !== 202) throw new Error(j.error || 'Error');
+        if (j.status === 'pending') {
+          push(`Activación encolada · ${c.name}`, 'success');
+        } else {
+          push(`Campaña ${next === 'ACTIVE' ? 'activada' : 'pausada'}`, 'success');
+        }
         load();
       },
     });

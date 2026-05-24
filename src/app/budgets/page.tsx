@@ -74,11 +74,21 @@ export default function BudgetsPage() {
       const r = await fetch('/api/mutation/budget', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ object_id: item.id, amount, type }),
+        body: JSON.stringify({
+          object_id: item.id,
+          amount,
+          type,
+          account_id: account,
+          scope_name: item.name,
+        }),
       });
       const j = await r.json();
-      if (j.error) throw new Error(j.error);
-      push(`Presupuesto ${item.name}: ${fmtUSD(amount)}`, 'success');
+      if (!r.ok && r.status !== 202) throw new Error(j.error || 'Error');
+      if (j.status === 'pending') {
+        push(`Encolado para aprobación · ${item.name}`, 'success');
+      } else {
+        push(`Presupuesto ${item.name}: ${fmtUSD(amount)}`, 'success');
+      }
       setDrafts((d) => { const n = { ...d }; delete n[item.id]; return n; });
       load();
     } catch (e) {

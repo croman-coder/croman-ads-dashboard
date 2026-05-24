@@ -146,9 +146,14 @@ export default function NewCampaignWizard() {
         body: JSON.stringify(body),
       });
       const j = await r.json();
-      if (j.error) throw new Error(j.error);
-      setResult({ campaign_id: j.campaign_id, adset_id: j.adset_id, ad_id: j.ad_id });
-      push('Campaña creada (PAUSED)', 'success');
+      if (!r.ok && r.status !== 202) throw new Error(j.error || 'Error');
+      if (j.status === 'pending') {
+        push('Campaña encolada para aprobación', 'success');
+        setResult({ campaign_id: 'pending', adset_id: 'pending', ad_id: j.proposal_id });
+      } else {
+        setResult({ campaign_id: j.campaign_id, adset_id: j.adset_id, ad_id: j.ad_id });
+        push('Campaña creada (PAUSED)', 'success');
+      }
     } catch (e) {
       push(e instanceof Error ? e.message : 'Error', 'error');
     } finally {
