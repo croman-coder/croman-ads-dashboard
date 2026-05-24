@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChevronDown, RefreshCw, LogOut, User } from 'lucide-react';
+import { ACCOUNT_STORAGE_KEY } from '@/lib/use-account';
 
 type Account = { id: string; name: string; currency: string };
 
@@ -27,8 +28,19 @@ export function TopBar({ selected, onSelect }: Props) {
       const r = await fetch('/api/accounts');
       const j = await r.json();
       if (j.error) throw new Error(j.error);
-      setAccounts(j.data || []);
-      if (!selected && j.data?.[0]) onSelect(j.data[0].id);
+      const list: Account[] = j.data || [];
+      setAccounts(list);
+      // Avoid stale-closure overwrite: check localStorage directly before auto-selecting.
+      // If a stored account still exists in the fresh list, keep it. Otherwise fall back to the first.
+      if (typeof window !== 'undefined' && list.length) {
+        const stored = localStorage.getItem(ACCOUNT_STORAGE_KEY) || '';
+        const validStored = stored && list.some((a) => a.id === stored);
+        if (validStored) {
+          if (stored !== selected) onSelect(stored);
+        } else if (!stored) {
+          onSelect(list[0].id);
+        }
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Unknown');
     } finally {
