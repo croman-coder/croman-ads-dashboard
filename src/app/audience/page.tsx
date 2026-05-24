@@ -56,21 +56,21 @@ export default function AudiencePage() {
         <main className="flex-1 p-6 space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-slate-900">Audiencia</h1>
-              <p className="text-sm text-slate-500">Editor de targeting por ad set — edad, género, geo, placements, dispositivo</p>
+              <h1 className="text-2xl font-bold text-[var(--fg)]">Audiencia</h1>
+              <p className="text-sm text-[var(--fg-muted)]">Editor de targeting por ad set — edad, género, geo, placements, dispositivo</p>
             </div>
-            <button onClick={load} disabled={loading} className="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900">
+            <button onClick={load} disabled={loading} className="flex items-center gap-2 text-sm text-[var(--fg-soft)] hover:text-[var(--fg)]">
               <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
               Recargar
             </button>
           </div>
 
-          {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">{error}</div>}
+          {error && <div className="bg-[var(--danger)]/10 border border-[var(--danger)]/30 text-[var(--danger)] px-4 py-3 rounded text-sm">{error}</div>}
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
             {/* Adset list */}
-            <div className="lg:col-span-5 bg-white border border-[var(--color-border)] rounded overflow-hidden">
-              <div className="px-4 py-2 border-b border-[var(--color-border)] text-sm font-semibold text-slate-700">
+            <div className="lg:col-span-5 bg-[var(--bg-elevated)] border border-[var(--border)] rounded overflow-hidden">
+              <div className="px-4 py-2 border-b border-[var(--border)] text-sm font-semibold text-[var(--fg-soft)]">
                 Ad Sets ({rows.length})
               </div>
               <div className="overflow-y-auto max-h-[70vh]">
@@ -78,21 +78,21 @@ export default function AudiencePage() {
                   <button
                     key={a.id}
                     onClick={() => setSelected(a)}
-                    className={`block w-full text-left px-4 py-3 border-b border-slate-100 hover:bg-slate-50 transition-colors ${
-                      selected?.id === a.id ? 'bg-blue-50' : ''
+                    className={`block w-full text-left px-4 py-3 border-b border-[var(--hairline)] hover:bg-[var(--surface)] transition-colors ${
+                      selected?.id === a.id ? 'bg-[var(--accent-soft)]' : ''
                     }`}
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
-                        <div className="text-sm font-medium text-slate-800 truncate">{a.name}</div>
-                        <div className="text-[11px] text-slate-400 font-mono">{a.id}</div>
+                        <div className="text-sm font-medium text-[var(--fg)] truncate">{a.name}</div>
+                        <div className="text-[11px] text-[var(--fg-faint)] font-mono">{a.id}</div>
                       </div>
                       <StatusBadge status={a.effective_status} />
                     </div>
                   </button>
                 ))}
                 {rows.length === 0 && !loading && (
-                  <div className="p-8 text-center text-slate-400 text-sm">Sin ad sets</div>
+                  <div className="p-8 text-center text-[var(--fg-faint)] text-sm">Sin ad sets</div>
                 )}
               </div>
             </div>
@@ -106,7 +106,7 @@ export default function AudiencePage() {
                   onError={(m) => push(m, 'error')}
                 />
               ) : (
-                <div className="bg-white border border-[var(--color-border)] rounded p-8 text-center text-slate-500">
+                <div className="bg-[var(--bg-elevated)] border border-[var(--border)] rounded p-8 text-center text-[var(--fg-muted)]">
                   Seleccioná un ad set para editar targeting
                 </div>
               )}
@@ -187,14 +187,14 @@ function TargetingEditor({
   }
 
   return (
-    <div className="bg-white border border-[var(--color-border)] rounded p-5 space-y-5">
+    <div className="bg-[var(--bg-elevated)] border border-[var(--border)] rounded p-5 space-y-5">
       <div>
-        <h3 className="font-semibold text-slate-900">{adset.name}</h3>
-        <p className="text-[11px] text-slate-400 font-mono">{adset.id}</p>
+        <h3 className="font-semibold text-[var(--fg)]">{adset.name}</h3>
+        <p className="text-[11px] text-[var(--fg-faint)] font-mono">{adset.id}</p>
       </div>
 
       <section>
-        <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Edad</h4>
+        <h4 className="text-xs font-semibold uppercase tracking-wider text-[var(--fg-muted)] mb-2">Edad</h4>
         <div className="flex items-center gap-3">
           <input
             type="number"
@@ -202,23 +202,23 @@ function TargetingEditor({
             max={65}
             value={ageMin}
             onChange={(e) => setAgeMin(Number(e.target.value))}
-            className="w-20 px-2 py-1.5 border border-[var(--color-border)] rounded text-sm font-mono"
+            className="w-20 px-2 py-1.5 border border-[var(--border)] rounded text-sm font-mono"
           />
-          <span className="text-slate-400">→</span>
+          <span className="text-[var(--fg-faint)]">→</span>
           <input
             type="number"
             min={13}
             max={65}
             value={ageMax}
             onChange={(e) => setAgeMax(Number(e.target.value))}
-            className="w-20 px-2 py-1.5 border border-[var(--color-border)] rounded text-sm font-mono"
+            className="w-20 px-2 py-1.5 border border-[var(--border)] rounded text-sm font-mono"
           />
-          <span className="text-xs text-slate-500">años</span>
+          <span className="text-xs text-[var(--fg-muted)]">años</span>
         </div>
       </section>
 
       <section>
-        <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Género</h4>
+        <h4 className="text-xs font-semibold uppercase tracking-wider text-[var(--fg-muted)] mb-2">Género</h4>
         <div className="flex gap-2">
           {[
             { v: 1, l: 'Masculino' },
@@ -229,8 +229,8 @@ function TargetingEditor({
               onClick={() => toggle(genders, g.v, setGenders)}
               className={`px-3 py-1.5 rounded text-sm border transition-colors ${
                 genders.includes(g.v)
-                  ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)]'
-                  : 'bg-white border-[var(--color-border)] hover:bg-slate-50'
+                  ? 'bg-[var(--accent)] text-white border-[var(--accent)]'
+                  : 'bg-[var(--bg-elevated)] border-[var(--border)] hover:bg-[var(--surface)]'
               }`}
             >
               {g.l}
@@ -240,8 +240,8 @@ function TargetingEditor({
             onClick={() => setGenders([])}
             className={`px-3 py-1.5 rounded text-sm border ${
               genders.length === 0
-                ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)]'
-                : 'bg-white border-[var(--color-border)] hover:bg-slate-50'
+                ? 'bg-[var(--accent)] text-white border-[var(--accent)]'
+                : 'bg-[var(--bg-elevated)] border-[var(--border)] hover:bg-[var(--surface)]'
             }`}
           >
             Todos
@@ -250,7 +250,7 @@ function TargetingEditor({
       </section>
 
       <section>
-        <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Plataformas</h4>
+        <h4 className="text-xs font-semibold uppercase tracking-wider text-[var(--fg-muted)] mb-2">Plataformas</h4>
         <div className="flex flex-wrap gap-2">
           {PLATFORMS.map((p) => (
             <Chip key={p} label={p} active={platforms.includes(p)} onClick={() => toggle(platforms, p, setPlatforms)} />
@@ -259,7 +259,7 @@ function TargetingEditor({
       </section>
 
       <section>
-        <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Facebook positions</h4>
+        <h4 className="text-xs font-semibold uppercase tracking-wider text-[var(--fg-muted)] mb-2">Facebook positions</h4>
         <div className="flex flex-wrap gap-2">
           {FB_POSITIONS.map((p) => (
             <Chip key={p} label={p} active={fbPos.includes(p)} onClick={() => toggle(fbPos, p, setFbPos)} />
@@ -268,7 +268,7 @@ function TargetingEditor({
       </section>
 
       <section>
-        <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Instagram positions</h4>
+        <h4 className="text-xs font-semibold uppercase tracking-wider text-[var(--fg-muted)] mb-2">Instagram positions</h4>
         <div className="flex flex-wrap gap-2">
           {IG_POSITIONS.map((p) => (
             <Chip key={p} label={p} active={igPos.includes(p)} onClick={() => toggle(igPos, p, setIgPos)} />
@@ -277,7 +277,7 @@ function TargetingEditor({
       </section>
 
       <section>
-        <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Dispositivo</h4>
+        <h4 className="text-xs font-semibold uppercase tracking-wider text-[var(--fg-muted)] mb-2">Dispositivo</h4>
         <div className="flex gap-2">
           {DEVICE_OPTS.map((d) => (
             <Chip key={d} label={d} active={devices.includes(d)} onClick={() => toggle(devices, d, setDevices)} />
@@ -285,14 +285,14 @@ function TargetingEditor({
         </div>
       </section>
 
-      <div className="pt-3 border-t border-[var(--color-border)] flex items-center justify-between">
-        <p className="text-xs text-slate-500">
+      <div className="pt-3 border-t border-[var(--border)] flex items-center justify-between">
+        <p className="text-xs text-[var(--fg-muted)]">
           ⚠ Guardar reinicia learning phase. CPL puede subir temporal 24-72h.
         </p>
         <button
           onClick={save}
           disabled={saving}
-          className="flex items-center gap-2 bg-[var(--color-primary)] text-white px-4 py-2 rounded text-sm font-medium hover:bg-blue-800 disabled:opacity-50"
+          className="flex items-center gap-2 bg-[var(--accent)] text-white px-4 py-2 rounded text-sm font-medium hover:opacity-90 disabled:opacity-50"
         >
           <Save size={14} />
           {saving ? 'Guardando…' : 'Guardar targeting'}
@@ -308,8 +308,8 @@ function Chip({ label, active, onClick }: { label: string; active: boolean; onCl
       onClick={onClick}
       className={`px-2.5 py-1 rounded text-xs font-mono border transition-colors ${
         active
-          ? 'bg-[var(--color-primary)] text-white border-[var(--color-primary)]'
-          : 'bg-white border-[var(--color-border)] text-slate-700 hover:bg-slate-50'
+          ? 'bg-[var(--accent)] text-white border-[var(--accent)]'
+          : 'bg-[var(--bg-elevated)] border-[var(--border)] text-[var(--fg-soft)] hover:bg-[var(--surface)]'
       }`}
     >
       {label}

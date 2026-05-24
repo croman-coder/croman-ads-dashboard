@@ -1,26 +1,38 @@
 import { cn } from '@/lib/utils';
 
-const MAP: Record<string, { label: string; cls: string }> = {
-  ACTIVE: { label: 'Activo', cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-  PAUSED: { label: 'Pausado', cls: 'bg-amber-50 text-amber-700 border-amber-200' },
-  DELETED: { label: 'Eliminado', cls: 'bg-red-50 text-red-700 border-red-200' },
-  ARCHIVED: { label: 'Archivado', cls: 'bg-slate-100 text-slate-700 border-slate-200' },
-  IN_PROCESS: { label: 'En revisión', cls: 'bg-blue-50 text-blue-700 border-blue-200' },
-  CAMPAIGN_PAUSED: { label: 'Camp. pausada', cls: 'bg-amber-50 text-amber-700 border-amber-200' },
-  ADSET_PAUSED: { label: 'Adset pausado', cls: 'bg-amber-50 text-amber-700 border-amber-200' },
-  WITH_ISSUES: { label: 'Con errores', cls: 'bg-red-50 text-red-700 border-red-200' },
+type Tone = 'success' | 'warning' | 'danger' | 'info' | 'muted';
+
+const TONE_CLS: Record<Tone, string> = {
+  success: 'border-[oklch(0.78_0.18_150_/_0.45)] bg-[oklch(0.78_0.18_150_/_0.10)] text-[var(--success)]',
+  warning: 'border-[oklch(0.82_0.18_75_/_0.45)] bg-[oklch(0.82_0.18_75_/_0.10)] text-[var(--warning)]',
+  danger: 'border-[oklch(0.65_0.25_18_/_0.45)] bg-[oklch(0.65_0.25_18_/_0.10)] text-[var(--danger)]',
+  info: 'border-[oklch(0.72_0.16_230_/_0.45)] bg-[oklch(0.72_0.16_230_/_0.10)] text-[var(--info)]',
+  muted: 'border-[var(--border)] bg-[var(--surface)] text-[var(--fg-muted)]',
+};
+
+const MAP: Record<string, { label: string; tone: Tone }> = {
+  ACTIVE: { label: 'Activo', tone: 'success' },
+  PAUSED: { label: 'Pausado', tone: 'muted' },
+  DELETED: { label: 'Eliminado', tone: 'danger' },
+  ARCHIVED: { label: 'Archivado', tone: 'muted' },
+  IN_PROCESS: { label: 'En revisión', tone: 'info' },
+  CAMPAIGN_PAUSED: { label: 'Camp. pausada', tone: 'warning' },
+  ADSET_PAUSED: { label: 'Adset pausado', tone: 'warning' },
+  WITH_ISSUES: { label: 'Con errores', tone: 'danger' },
 };
 
 export function StatusBadge({ status }: { status?: string }) {
   if (!status) return null;
-  const entry = MAP[status] || { label: status, cls: 'bg-slate-50 text-slate-700 border-slate-200' };
+  const entry = MAP[status] || { label: status, tone: 'muted' as Tone };
   return (
     <span
       className={cn(
-        'inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium border',
-        entry.cls
+        'inline-flex items-center gap-1.5 px-2 py-0.5 text-[10px] uppercase tracking-[0.08em] font-semibold border',
+        TONE_CLS[entry.tone]
       )}
+      style={{ borderRadius: 2 }}
     >
+      <span className={`dot dot-${entry.tone === 'info' ? 'success' : entry.tone}`} />
       {entry.label}
     </span>
   );

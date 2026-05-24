@@ -32,7 +32,7 @@ export function KpiCard({ label, value, hint, trend, trendValue, accent = 'prima
           {label}
         </span>
       </div>
-      <div className="text-3xl font-bold text-[var(--fg)] font-[family-name:var(--font-mono)] tracking-tight">
+      <div className="numeric text-4xl font-semibold text-[var(--fg)]">
         {value}
       </div>
       {(hint || trendValue) && (

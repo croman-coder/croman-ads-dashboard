@@ -102,28 +102,28 @@ export default function AnalyticsPage() {
         <main className="flex-1 p-6 space-y-4">
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div>
-              <h1 className="text-2xl font-bold text-slate-900">Analítica</h1>
-              <p className="text-sm text-slate-500">Breakdowns profundos por dimensión + export de leads</p>
+              <h1 className="text-2xl font-bold text-[var(--fg)]">Analítica</h1>
+              <p className="text-sm text-[var(--fg-muted)]">Breakdowns profundos por dimensión + export de leads</p>
             </div>
             <div className="flex items-center gap-2">
               <DateRangePicker value={range} onChange={setRange} />
-              <button onClick={load} disabled={loading} className="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900">
+              <button onClick={load} disabled={loading} className="flex items-center gap-2 text-sm text-[var(--fg-soft)] hover:text-[var(--fg)]">
                 <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
               </button>
             </div>
           </div>
 
           {/* Tabs */}
-          <div className="bg-white border border-[var(--color-border)] rounded">
-            <div className="flex border-b border-[var(--color-border)] overflow-x-auto">
+          <div className="bg-[var(--bg-elevated)] border border-[var(--border)] rounded">
+            <div className="flex border-b border-[var(--border)] overflow-x-auto">
               {TABS.map((t) => (
                 <button
                   key={t.key}
                   onClick={() => setTab(t.key)}
                   className={`px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors border-b-2 ${
                     tab === t.key
-                      ? 'border-[var(--color-primary)] text-[var(--color-primary)]'
-                      : 'border-transparent text-slate-600 hover:text-slate-900'
+                      ? 'border-[var(--accent)] text-[var(--accent)]'
+                      : 'border-transparent text-[var(--fg-soft)] hover:text-[var(--fg)]'
                   }`}
                 >
                   {t.label}
@@ -133,7 +133,7 @@ export default function AnalyticsPage() {
 
             <div className="p-5">
               {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm mb-3">{error}</div>
+                <div className="bg-[var(--danger)]/10 border border-[var(--danger)]/30 text-[var(--danger)] px-4 py-3 rounded text-sm mb-3">{error}</div>
               )}
               {tab === 'age,gender' && <AgeGenderChart rows={rows} />}
               {tab === 'publisher_platform,platform_position' && <PlacementChart rows={rows} />}
@@ -144,13 +144,13 @@ export default function AnalyticsPage() {
           </div>
 
           {/* Export */}
-          <div className="bg-white border border-[var(--color-border)] rounded p-5">
-            <h2 className="text-sm font-semibold text-slate-700 mb-3">Export leads del período</h2>
+          <div className="bg-[var(--bg-elevated)] border border-[var(--border)] rounded p-5">
+            <h2 className="text-sm font-semibold text-[var(--fg-soft)] mb-3">Export leads del período</h2>
             <div className="flex items-center gap-3 flex-wrap">
               <select
                 value={exportPageId}
                 onChange={(e) => setExportPageId(e.target.value)}
-                className="px-3 py-2 border border-[var(--color-border)] rounded text-sm bg-white min-w-[280px]"
+                className="px-3 py-2 border border-[var(--border)] rounded text-sm bg-[var(--bg-elevated)] min-w-[280px]"
               >
                 {pages.length === 0 && <option>Sin páginas</option>}
                 {pages.map((p) => (
@@ -159,16 +159,16 @@ export default function AnalyticsPage() {
               </select>
               <button
                 onClick={exportLeads}
-                className="flex items-center gap-2 bg-[var(--color-primary)] text-white px-4 py-2 rounded text-sm font-medium hover:bg-blue-800"
+                className="flex items-center gap-2 bg-[var(--accent)] text-white px-4 py-2 rounded text-sm font-medium hover:opacity-90"
               >
                 <Download size={14} />
                 Descargar CSV
               </button>
               {range.since && range.until && (
-                <span className="text-xs text-slate-500 font-mono">{range.since} → {range.until}</span>
+                <span className="text-xs text-[var(--fg-muted)] font-mono">{range.since} → {range.until}</span>
               )}
             </div>
-            <p className="text-xs text-slate-500 mt-2">
+            <p className="text-xs text-[var(--fg-muted)] mt-2">
               Exporta todos los leads en formato CSV con name, phone, email, city, ad, campaign. Útil para subir a CRM con dedup.
             </p>
           </div>
@@ -329,8 +329,8 @@ function TableRows({ rows, showImp }: { rows: Array<{ name: string; spend: numbe
   return (
     <div className="mt-4 overflow-x-auto">
       <table className="w-full text-sm">
-        <thead className="bg-[var(--color-muted)]">
-          <tr className="text-xs uppercase tracking-wider text-slate-600">
+        <thead className="bg-[var(--surface)]">
+          <tr className="text-xs uppercase tracking-wider text-[var(--fg-soft)]">
             <th className="px-3 py-2 text-left">Segmento</th>
             {showImp && <th className="px-3 py-2 text-right">Impr.</th>}
             <th className="px-3 py-2 text-right">Spend</th>
@@ -340,15 +340,15 @@ function TableRows({ rows, showImp }: { rows: Array<{ name: string; spend: numbe
         </thead>
         <tbody className="font-[family-name:var(--font-mono)]">
           {rows.length === 0 && (
-            <tr><td colSpan={showImp ? 5 : 4} className="px-3 py-6 text-center text-slate-400">Sin datos</td></tr>
+            <tr><td colSpan={showImp ? 5 : 4} className="px-3 py-6 text-center text-[var(--fg-faint)]">Sin datos</td></tr>
           )}
           {rows.map((r) => (
-            <tr key={r.name} className="border-t border-slate-100 hover:bg-slate-50">
-              <td className="px-3 py-2 font-sans text-slate-800">{r.name}</td>
-              {showImp && <td className="px-3 py-2 text-right text-slate-600">{fmtInt(r.impressions)}</td>}
+            <tr key={r.name} className="border-t border-[var(--hairline)] hover:bg-[var(--surface)]">
+              <td className="px-3 py-2 font-sans text-[var(--fg)]">{r.name}</td>
+              {showImp && <td className="px-3 py-2 text-right text-[var(--fg-soft)]">{fmtInt(r.impressions)}</td>}
               <td className="px-3 py-2 text-right">{fmtUSD(r.spend)}</td>
               <td className="px-3 py-2 text-right">{r.leads || '—'}</td>
-              <td className={`px-3 py-2 text-right font-semibold ${r.cpl > 5 ? 'text-[var(--color-destructive)]' : r.cpl > 3 ? 'text-[var(--color-warning)]' : 'text-[var(--color-success)]'}`}>
+              <td className={`px-3 py-2 text-right font-semibold ${r.cpl > 5 ? 'text-[var(--danger)]' : r.cpl > 3 ? 'text-[var(--warning)]' : 'text-[var(--color-success)]'}`}>
                 {r.leads ? fmtUSD(r.cpl) : '—'}
               </td>
             </tr>

@@ -175,23 +175,23 @@ export default function NewCampaignWizard() {
         <TopBar selected={account} onSelect={setAccount} />
         <main className="flex-1 p-6 space-y-4 max-w-4xl">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">Nueva campaña</h1>
-            <p className="text-sm text-slate-500">Wizard 4 pasos · Campaign → AdSet → Creativo → Revisar</p>
+            <h1 className="text-2xl font-bold text-[var(--fg)]">Nueva campaña</h1>
+            <p className="text-sm text-[var(--fg-muted)]">Wizard 4 pasos · Campaign → AdSet → Creativo → Revisar</p>
           </div>
 
           {/* Stepper */}
-          <div className="bg-white border border-[var(--color-border)] rounded p-4">
+          <div className="bg-[var(--bg-elevated)] border border-[var(--border)] rounded p-4">
             <div className="flex items-center justify-between">
               {STEPS.map((s, i) => (
                 <div key={s} className="flex items-center flex-1">
                   <div
                     className={`w-8 h-8 rounded-full grid place-items-center text-xs font-bold ${
-                      i < step ? 'bg-emerald-500 text-white' : i === step ? 'bg-[var(--color-primary)] text-white' : 'bg-slate-200 text-slate-500'
+                      i < step ? 'bg-emerald-500 text-white' : i === step ? 'bg-[var(--accent)] text-white' : 'bg-slate-200 text-[var(--fg-muted)]'
                     }`}
                   >
                     {i < step ? <Check size={14} /> : i + 1}
                   </div>
-                  <div className={`ml-2 text-sm ${i === step ? 'font-semibold text-slate-900' : 'text-slate-500'}`}>{s}</div>
+                  <div className={`ml-2 text-sm ${i === step ? 'font-semibold text-[var(--fg)]' : 'text-[var(--fg-muted)]'}`}>{s}</div>
                   {i < STEPS.length - 1 && <div className={`flex-1 mx-3 h-0.5 ${i < step ? 'bg-emerald-500' : 'bg-slate-200'}`} />}
                 </div>
               ))}
@@ -208,10 +208,10 @@ export default function NewCampaignWizard() {
                 <div>ad_id: {result.ad_id}</div>
               </div>
               <p className="text-sm text-emerald-700 mt-3">Estado inicial: <strong>PAUSED</strong>. Revisar en Ads Manager antes de activar.</p>
-              <a href="/campaigns" className="inline-block mt-4 text-sm text-[var(--color-primary)] hover:underline">→ Ver campañas</a>
+              <a href="/campaigns" className="inline-block mt-4 text-sm text-[var(--accent)] hover:underline">→ Ver campañas</a>
             </div>
           ) : (
-            <div className="bg-white border border-[var(--color-border)] rounded p-6 space-y-4">
+            <div className="bg-[var(--bg-elevated)] border border-[var(--border)] rounded p-6 space-y-4">
               {step === 0 && (
                 <>
                   <Field label="Nombre de campaña">
@@ -310,7 +310,7 @@ export default function NewCampaignWizard() {
                         type="button"
                         onClick={() => fileRef.current?.click()}
                         disabled={uploading}
-                        className="flex items-center gap-2 px-3 py-2 border border-[var(--color-border)] rounded text-sm hover:bg-slate-50"
+                        className="flex items-center gap-2 px-3 py-2 border border-[var(--border)] rounded text-sm hover:bg-[var(--surface)]"
                       >
                         <Upload size={14} />
                         {uploading ? 'Subiendo…' : 'Subir imagen'}
@@ -327,7 +327,7 @@ export default function NewCampaignWizard() {
                     {imagePreview && (
                       <div className="mt-3 inline-block">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={imagePreview} alt="preview" className="max-h-40 rounded border border-[var(--color-border)]" />
+                        <img src={imagePreview} alt="preview" className="max-h-40 rounded border border-[var(--border)]" />
                       </div>
                     )}
                   </Field>
@@ -336,7 +336,7 @@ export default function NewCampaignWizard() {
 
               {step === 3 && (
                 <div className="space-y-3 text-sm">
-                  <h3 className="font-semibold text-slate-900">Revisar antes de crear</h3>
+                  <h3 className="font-semibold text-[var(--fg)]">Revisar antes de crear</h3>
                   <Row k="Campaña" v={campaignName} />
                   <Row k="Objetivo" v={objective} />
                   <Row k="Ad set" v={adsetName} />
@@ -363,7 +363,7 @@ export default function NewCampaignWizard() {
               <button
                 onClick={() => setStep((s) => Math.max(0, s - 1))}
                 disabled={step === 0}
-                className="flex items-center gap-1 px-3 py-2 rounded text-sm border border-[var(--color-border)] hover:bg-slate-50 disabled:opacity-40"
+                className="flex items-center gap-1 px-3 py-2 rounded text-sm border border-[var(--border)] hover:bg-[var(--surface)] disabled:opacity-40"
               >
                 <ChevronLeft size={14} /> Anterior
               </button>
@@ -371,7 +371,7 @@ export default function NewCampaignWizard() {
                 <button
                   onClick={() => setStep((s) => s + 1)}
                   disabled={!canNext[step]()}
-                  className="flex items-center gap-1 px-4 py-2 rounded text-sm font-medium text-white bg-[var(--color-primary)] hover:bg-blue-800 disabled:opacity-40"
+                  className="flex items-center gap-1 px-4 py-2 rounded text-sm font-medium text-white bg-[var(--accent)] hover:opacity-90 disabled:opacity-40"
                 >
                   Siguiente <ChevronRight size={14} />
                 </button>
@@ -392,8 +392,8 @@ export default function NewCampaignWizard() {
       <ToastStack toasts={toasts} onDismiss={dismiss} />
 
       <style jsx global>{`
-        .input { width: 100%; padding: 0.5rem 0.75rem; border: 1px solid var(--color-border); border-radius: 0.25rem; font-size: 0.875rem; background: white; }
-        .input:focus { outline: 2px solid var(--color-primary); outline-offset: -2px; }
+        .input { width: 100%; padding: 0.5rem 0.75rem; border: 1px solid var(--border); border-radius: 0.25rem; font-size: 0.875rem; background: white; }
+        .input:focus { outline: 2px solid var(--accent); outline-offset: -2px; }
       `}</style>
     </div>
   );
@@ -402,7 +402,7 @@ export default function NewCampaignWizard() {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="text-xs font-semibold uppercase tracking-wider text-slate-500 block mb-1">{label}</label>
+      <label className="text-xs font-semibold uppercase tracking-wider text-[var(--fg-muted)] block mb-1">{label}</label>
       {children}
     </div>
   );
@@ -410,9 +410,9 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 function Row({ k, v }: { k: string; v: string }) {
   return (
-    <div className="grid grid-cols-3 gap-2 py-1 border-b border-slate-100">
-      <div className="text-xs text-slate-500 uppercase tracking-wider">{k}</div>
-      <div className="col-span-2 text-slate-800 font-mono text-xs break-all">{v}</div>
+    <div className="grid grid-cols-3 gap-2 py-1 border-b border-[var(--hairline)]">
+      <div className="text-xs text-[var(--fg-muted)] uppercase tracking-wider">{k}</div>
+      <div className="col-span-2 text-[var(--fg)] font-mono text-xs break-all">{v}</div>
     </div>
   );
 }

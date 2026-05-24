@@ -1,51 +1,57 @@
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800;900&family=Geist+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
 /*
-  Croman Ads — Editorial-industrial dark
-  Strategy: Committed amber accent on warm-tinted neutrals.
-  Rejecting: purple SaaS reflex, glassmorphism default, side-stripe borders.
+  Croman Ads v2 — Brutalist noir + electric cobalt
+  Reset from v1 editorial-industrial amber.
+  Strategy: pure noir base, high-contrast typography, sharp 2px corners,
+  cobalt primary action / lime secondary data accent.
 */
 
 :root {
-  /* Neutrals — slight warm green tint (away from cold blue) */
-  --bg-deep: oklch(0.13 0.008 95);     /* ~#19181a — base canvas */
-  --bg-base: oklch(0.16 0.009 95);     /* lifted */
-  --bg-elevated: oklch(0.19 0.010 95); /* cards */
-  --bg-elevated-2: oklch(0.22 0.011 95);
-  --surface: oklch(0.20 0.012 95 / 0.6);
-  --surface-2: oklch(0.24 0.013 95 / 0.5);
+  /* Neutrals — pure noir, no warm tint */
+  --bg-deep: #07070a;          /* base canvas */
+  --bg-base: #0c0c10;          /* lifted */
+  --bg-elevated: #131318;      /* cards */
+  --bg-elevated-2: #1a1a21;
+  --surface: rgba(255, 255, 255, 0.03);
+  --surface-2: rgba(255, 255, 255, 0.05);
 
-  --fg: oklch(0.96 0.008 95);
-  --fg-soft: oklch(0.84 0.010 95);
-  --fg-muted: oklch(0.62 0.012 95);
-  --fg-faint: oklch(0.42 0.010 95);
+  --fg: #f5f5f7;
+  --fg-soft: #c8c8d0;
+  --fg-muted: #7e7e88;
+  --fg-faint: #4a4a52;
 
-  --border: oklch(0.30 0.012 95);
-  --border-strong: oklch(0.40 0.014 95);
-  --hairline: oklch(0.28 0.011 95);
+  --border: #26262e;
+  --border-strong: #3a3a44;
+  --hairline: #1d1d24;
 
-  /* Single committed accent — industrial amber */
-  --accent: oklch(0.74 0.155 60);            /* warm amber */
-  --accent-soft: oklch(0.74 0.155 60 / 0.18);
-  --accent-fg: oklch(0.18 0.012 95);          /* dark text on amber */
+  /* PRIMARY — electric cobalt, sharp and modern */
+  --accent: oklch(0.66 0.22 252);
+  --accent-soft: oklch(0.66 0.22 252 / 0.14);
+  --accent-strong: oklch(0.72 0.24 252);
+  --accent-fg: #ffffff;
 
-  /* Semantic — restrained, all OKLCH */
-  --success: oklch(0.74 0.155 155);   /* green */
-  --warning: oklch(0.78 0.155 80);    /* light amber/yellow */
-  --danger: oklch(0.65 0.20 25);      /* warm red */
-  --info: oklch(0.74 0.105 220);      /* desaturated teal */
+  /* SECONDARY data accent — acid lime for highlight numbers / charts */
+  --data: oklch(0.86 0.21 130);
+  --data-soft: oklch(0.86 0.21 130 / 0.16);
 
-  --radius: 4px;
-  --radius-md: 8px;
-  --radius-lg: 14px;
+  /* Semantic */
+  --success: oklch(0.78 0.18 150);
+  --warning: oklch(0.82 0.18 75);
+  --danger: oklch(0.65 0.25 18);
+  --info: oklch(0.72 0.16 230);
+
+  --radius: 2px;
+  --radius-md: 4px;
+  --radius-lg: 8px;
 
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 
-  --font-sans: 'Inter', system-ui, sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
-  --font-serif: 'Instrument Serif', Georgia, serif;
+  --font-sans: 'Geist', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Geist Mono', 'JetBrains Mono', ui-monospace, monospace;
+  --font-display: 'Space Grotesk', 'Geist', sans-serif;
 }
 
 @theme inline {
@@ -65,18 +71,22 @@ html, body {
   background: var(--bg-deep);
   color: var(--fg);
   font-family: var(--font-sans);
+  font-feature-settings: 'ss01', 'cv11';
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  letter-spacing: -0.005em;
 }
 
+/* Subtle noise + cobalt aurora top-left */
 body {
   background-image:
-    radial-gradient(circle at 0% 0%, oklch(0.74 0.155 60 / 0.05), transparent 40%),
-    radial-gradient(circle at 100% 100%, oklch(0.74 0.105 155 / 0.025), transparent 50%);
+    radial-gradient(ellipse 80% 50% at 0% 0%, oklch(0.66 0.22 252 / 0.06), transparent 60%),
+    radial-gradient(ellipse 60% 40% at 100% 0%, oklch(0.86 0.21 130 / 0.025), transparent 55%);
   background-attachment: fixed;
 }
 
-/* Focus rings */
+/* Focus rings — cobalt */
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
@@ -91,45 +101,67 @@ body {
 /* Scrollbar */
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: oklch(0.30 0.011 95); border-radius: 6px; }
-::-webkit-scrollbar-thumb:hover { background: oklch(0.40 0.013 95); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 0; }
+::-webkit-scrollbar-thumb:hover { background: var(--border-strong); }
 
-/* Typographic display */
+/* Typographic display — Space Grotesk, tight, big */
 .display {
-  font-family: var(--font-serif);
-  font-weight: 400;
-  letter-spacing: -0.02em;
+  font-family: var(--font-display);
+  font-weight: 500;
+  letter-spacing: -0.035em;
   line-height: 0.95;
 }
 
-/* Utility: card, no glass reflex */
+/* Numeric display for KPI values */
+.numeric {
+  font-family: var(--font-mono);
+  font-feature-settings: 'tnum', 'ss01';
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+/* Card — sharp, hairline border, no glass */
 .card {
   background: var(--bg-elevated);
   border: 1px solid var(--hairline);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius);
+  transition: border-color 220ms var(--ease-out), background 220ms var(--ease-out);
 }
+.card:hover { border-color: var(--border); }
 .card-flat {
   background: var(--surface);
   border: 1px solid var(--hairline);
   border-radius: var(--radius);
 }
 
-/* Primary button — solid amber, dark text */
+/* PRIMARY button — solid cobalt */
 .btn-primary {
   background: var(--accent);
   color: var(--accent-fg);
-  border: 1px solid transparent;
+  border: 1px solid var(--accent);
   font-weight: 600;
-  transition: filter 180ms var(--ease-out);
+  font-size: 13px;
+  letter-spacing: 0.01em;
+  transition: all 160ms var(--ease-out);
+  border-radius: var(--radius);
 }
-.btn-primary:hover { filter: brightness(1.08); }
-.btn-primary:active { filter: brightness(0.95); }
+.btn-primary:hover {
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+  box-shadow: 0 0 0 4px var(--accent-soft);
+}
+.btn-primary:active { transform: translateY(1px); }
+.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
 
+/* Ghost button — sharp outline */
 .btn-ghost {
   background: transparent;
   color: var(--fg-soft);
   border: 1px solid var(--border);
-  transition: border-color 180ms var(--ease-out), color 180ms var(--ease-out), background 180ms var(--ease-out);
+  font-weight: 500;
+  font-size: 13px;
+  border-radius: var(--radius);
+  transition: all 160ms var(--ease-out);
 }
 .btn-ghost:hover {
   border-color: var(--border-strong);
@@ -137,30 +169,33 @@ body {
   background: var(--surface);
 }
 
+/* Danger button */
 .btn-danger {
   background: transparent;
   color: var(--danger);
   border: 1px solid var(--danger);
-  transition: filter 180ms var(--ease-out), background 180ms var(--ease-out);
+  font-weight: 600;
+  border-radius: var(--radius);
+  transition: all 160ms var(--ease-out);
 }
-.btn-danger:hover { background: oklch(0.65 0.20 25 / 0.1); }
+.btn-danger:hover { background: oklch(0.65 0.25 18 / 0.12); }
 
 /* Animations */
 @keyframes fade-in-up {
-  from { opacity: 0; transform: translateY(4px); }
+  from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }
 }
-.fade-in { animation: fade-in-up 400ms var(--ease-out) both; }
+.fade-in { animation: fade-in-up 380ms var(--ease-out) both; }
 
-.stagger > * { opacity: 0; animation: fade-in-up 400ms var(--ease-out) forwards; }
-.stagger > *:nth-child(1) { animation-delay: 30ms; }
-.stagger > *:nth-child(2) { animation-delay: 80ms; }
-.stagger > *:nth-child(3) { animation-delay: 130ms; }
-.stagger > *:nth-child(4) { animation-delay: 180ms; }
-.stagger > *:nth-child(5) { animation-delay: 230ms; }
-.stagger > *:nth-child(6) { animation-delay: 280ms; }
-.stagger > *:nth-child(7) { animation-delay: 330ms; }
-.stagger > *:nth-child(8) { animation-delay: 380ms; }
+.stagger > * { opacity: 0; animation: fade-in-up 380ms var(--ease-out) forwards; }
+.stagger > *:nth-child(1) { animation-delay: 20ms; }
+.stagger > *:nth-child(2) { animation-delay: 60ms; }
+.stagger > *:nth-child(3) { animation-delay: 100ms; }
+.stagger > *:nth-child(4) { animation-delay: 140ms; }
+.stagger > *:nth-child(5) { animation-delay: 180ms; }
+.stagger > *:nth-child(6) { animation-delay: 220ms; }
+.stagger > *:nth-child(7) { animation-delay: 260ms; }
+.stagger > *:nth-child(8) { animation-delay: 300ms; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
@@ -184,6 +219,7 @@ body {
 /* Smooth scroll + tabular figures globally for data tables */
 html { scroll-behavior: smooth; }
 table { font-variant-numeric: tabular-nums; }
+table th { font-feature-settings: 'cv11'; }
 
 /* Page enter animation */
 @keyframes blur-in {
@@ -192,12 +228,37 @@ table { font-variant-numeric: tabular-nums; }
 }
 main { animation: blur-in 500ms var(--ease-out-expo) both; }
 
-/* Refined card hover */
-.card { transition: border-color 220ms var(--ease-out), background 220ms var(--ease-out); }
-
 /* Pulse for live indicators */
 @keyframes soft-pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.5; }
 }
 .animate-pulse { animation: soft-pulse 2s ease-in-out infinite; }
+
+/* Brutalist heading utility — uppercase tracking display */
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--fg-muted);
+}
+
+/* Section divider — sharp line, no gradient */
+.divider {
+  border-top: 1px solid var(--hairline);
+}
+
+/* Mono badge for IDs */
+.id-tag {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--fg-faint);
+  letter-spacing: 0;
+}
+
+/* Hover lift for cards in grid */
+.lift {
+  transition: transform 220ms var(--ease-out), border-color 220ms var(--ease-out);
+}
+.lift:hover { transform: translateY(-2px); border-color: var(--border-strong); }

@@ -27,36 +27,35 @@ export function ConfirmDialog({
 }: Props) {
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onCancel}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+      onClick={onCancel}
+    >
       <div
-        className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6 border border-[var(--color-border)]"
+        className="card max-w-md w-full mx-4 p-6 shadow-2xl fade-in"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start gap-3">
-          <div className={destructive ? 'text-[var(--color-destructive)]' : 'text-[var(--color-warning)]'}>
-            <AlertTriangle size={24} />
+          <div className={destructive ? 'text-[var(--danger)]' : 'text-[var(--warning)]'}>
+            <AlertTriangle size={22} strokeWidth={2.25} />
           </div>
           <div className="flex-1">
-            <h3 className="text-base font-semibold text-slate-900">{title}</h3>
-            <p className="text-sm text-slate-600 mt-1">{message}</p>
+            <h3 className="display text-xl text-[var(--fg)]">{title}</h3>
+            <p className="text-sm text-[var(--fg-soft)] mt-2 leading-relaxed">{message}</p>
           </div>
         </div>
-        <div className="flex items-center justify-end gap-2 mt-5">
+        <div className="flex items-center justify-end gap-2 mt-6">
           <button
             onClick={onCancel}
             disabled={loading}
-            className="px-3 py-1.5 rounded text-sm border border-[var(--color-border)] hover:bg-slate-50 transition-colors"
+            className="btn-ghost px-4 py-1.5"
           >
             {cancelLabel}
           </button>
           <button
             onClick={onConfirm}
             disabled={loading}
-            className={`px-3 py-1.5 rounded text-sm font-medium text-white transition-colors ${
-              destructive
-                ? 'bg-[var(--color-destructive)] hover:bg-red-700'
-                : 'bg-[var(--color-primary)] hover:bg-blue-800'
-            } disabled:opacity-50`}
+            className={destructive ? 'btn-danger px-4 py-1.5' : 'btn-primary px-4 py-1.5'}
           >
             {loading ? '…' : confirmLabel}
           </button>

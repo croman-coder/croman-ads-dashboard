@@ -119,11 +119,11 @@ export default function Dashboard() {
               <div style={{ width: '100%', height: 320 }}>
                 <ResponsiveContainer>
                   <BarChart data={chartData} layout="vertical" margin={{ left: 60 }}>
-                    <CartesianGrid strokeDasharray="2 4" stroke="oklch(0.30 0.012 95)" />
-                    <XAxis type="number" tick={{ fontSize: 11, fill: 'oklch(0.62 0.012 95)' }} />
-                    <YAxis dataKey="name" type="category" width={150} tick={{ fontSize: 11, fill: 'oklch(0.84 0.010 95)' }} />
-                    <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, background: 'oklch(0.19 0.010 95)', border: '1px solid oklch(0.30 0.012 95)', color: 'oklch(0.96 0.008 95)' }} cursor={{ fill: 'oklch(0.74 0.155 60 / 0.08)' }} />
-                    <Bar dataKey="spend" name="Spend USD" fill="oklch(0.74 0.155 60)" radius={[0, 4, 4, 0]} />
+                    <CartesianGrid strokeDasharray="2 4" stroke="#26262e" />
+                    <XAxis type="number" tick={{ fontSize: 11, fill: '#7e7e88' }} />
+                    <YAxis dataKey="name" type="category" width={150} tick={{ fontSize: 11, fill: '#c8c8d0' }} />
+                    <Tooltip contentStyle={{ fontSize: 12, borderRadius: 2, background: '#131318', border: '1px solid #3a3a44', color: '#f5f5f7' }} cursor={{ fill: 'oklch(0.66 0.22 252 / 0.10)' }} />
+                    <Bar dataKey="spend" name="Spend USD" fill="oklch(0.66 0.22 252)" radius={[0, 2, 2, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -137,13 +137,13 @@ export default function Dashboard() {
               <div style={{ width: '100%', height: 320 }}>
                 <ResponsiveContainer>
                   <BarChart data={chartData} layout="vertical" margin={{ left: 60 }}>
-                    <CartesianGrid strokeDasharray="2 4" stroke="oklch(0.30 0.012 95)" />
-                    <XAxis type="number" tick={{ fontSize: 11, fill: 'oklch(0.62 0.012 95)' }} />
-                    <YAxis dataKey="name" type="category" width={150} tick={{ fontSize: 11, fill: 'oklch(0.84 0.010 95)' }} />
-                    <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, background: 'oklch(0.19 0.010 95)', border: '1px solid oklch(0.30 0.012 95)', color: 'oklch(0.96 0.008 95)' }} cursor={{ fill: 'oklch(0.74 0.155 60 / 0.08)' }} />
-                    <Bar dataKey="cpl" name="CPL USD" radius={[0, 4, 4, 0]}>
+                    <CartesianGrid strokeDasharray="2 4" stroke="#26262e" />
+                    <XAxis type="number" tick={{ fontSize: 11, fill: '#7e7e88' }} />
+                    <YAxis dataKey="name" type="category" width={150} tick={{ fontSize: 11, fill: '#c8c8d0' }} />
+                    <Tooltip contentStyle={{ fontSize: 12, borderRadius: 2, background: '#131318', border: '1px solid #3a3a44', color: '#f5f5f7' }} cursor={{ fill: 'oklch(0.66 0.22 252 / 0.10)' }} />
+                    <Bar dataKey="cpl" name="CPL USD" radius={[0, 2, 2, 0]}>
                       {chartData.map((d, i) => (
-                        <Cell key={i} fill={d.cpl > 5 ? 'oklch(0.65 0.20 25)' : d.cpl > 3 ? 'oklch(0.78 0.155 80)' : 'oklch(0.74 0.155 155)'} />
+                        <Cell key={i} fill={d.cpl > 5 ? 'oklch(0.65 0.25 18)' : d.cpl > 3 ? 'oklch(0.82 0.18 75)' : 'oklch(0.86 0.21 130)'} />
                       ))}
                     </Bar>
                   </BarChart>

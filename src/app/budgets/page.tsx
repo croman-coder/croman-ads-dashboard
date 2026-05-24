@@ -106,26 +106,26 @@ export default function BudgetsPage() {
         <main className="flex-1 p-6 space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-slate-900">Presupuestos</h1>
-              <p className="text-sm text-slate-500">Edición de budget daily/lifetime — campañas y ad sets</p>
+              <h1 className="text-2xl font-bold text-[var(--fg)]">Presupuestos</h1>
+              <p className="text-sm text-[var(--fg-muted)]">Edición de budget daily/lifetime — campañas y ad sets</p>
             </div>
-            <button onClick={load} disabled={loading} className="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900">
+            <button onClick={load} disabled={loading} className="flex items-center gap-2 text-sm text-[var(--fg-soft)] hover:text-[var(--fg)]">
               <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
               Recargar
             </button>
           </div>
 
-          {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">{error}</div>}
+          {error && <div className="bg-[var(--danger)]/10 border border-[var(--danger)]/30 text-[var(--danger)] px-4 py-3 rounded text-sm">{error}</div>}
 
           <div className="bg-[oklch(0.78_0.155_80_/_0.1)] border border-[var(--warning)] rounded px-4 py-3 text-sm text-[var(--fg)]">
             <strong className="text-[var(--warning)]">Atención:</strong> cambios de presupuesto son inmediatos y afectan gasto real. <strong>Tope máximo USD {BUDGET_CAP}</strong>. Revisar monto antes de guardar.
           </div>
 
-          <div className="bg-white border border-[var(--color-border)] rounded overflow-hidden">
+          <div className="bg-[var(--bg-elevated)] border border-[var(--border)] rounded overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead className="bg-[var(--color-muted)]">
-                  <tr className="text-xs uppercase tracking-wider text-slate-600">
+                <thead className="bg-[var(--surface)]">
+                  <tr className="text-xs uppercase tracking-wider text-[var(--fg-soft)]">
                     <th className="px-4 py-2 text-left">Nivel</th>
                     <th className="px-4 py-2 text-left">Nombre</th>
                     <th className="px-4 py-2 text-left">Estado</th>
@@ -137,7 +137,7 @@ export default function BudgetsPage() {
                 </thead>
                 <tbody>
                   {items.length === 0 && !loading && (
-                    <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-400">Sin elementos con presupuesto</td></tr>
+                    <tr><td colSpan={7} className="px-4 py-8 text-center text-[var(--fg-faint)]">Sin elementos con presupuesto</td></tr>
                   )}
                   {items.map((it) => {
                     const daily = it.daily_budget ? Number(it.daily_budget) / 100 : null;
@@ -145,22 +145,22 @@ export default function BudgetsPage() {
                     const current = daily ?? lifetime ?? 0;
                     const type = daily ? 'daily' : 'lifetime';
                     return (
-                      <tr key={it.id} className="border-t border-slate-100 hover:bg-slate-50">
+                      <tr key={it.id} className="border-t border-[var(--hairline)] hover:bg-[var(--surface)]">
                         <td className="px-4 py-2">
-                          <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-slate-100 text-slate-700">
+                          <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-[var(--surface-2)] text-[var(--fg-soft)]">
                             {it.level}
                           </span>
                         </td>
                         <td className="px-4 py-2">
-                          <div className="font-medium text-slate-800">{it.name}</div>
-                          <div className="text-[11px] text-slate-400 font-mono">{it.id}</div>
+                          <div className="font-medium text-[var(--fg)]">{it.name}</div>
+                          <div className="text-[11px] text-[var(--fg-faint)] font-mono">{it.id}</div>
                         </td>
                         <td className="px-4 py-2"><StatusBadge status={it.effective_status} /></td>
                         <td className="px-4 py-2 text-xs font-mono">{type}</td>
-                        <td className="px-4 py-2 text-right font-mono text-slate-700">{fmtUSD(current)}</td>
+                        <td className="px-4 py-2 text-right font-mono text-[var(--fg-soft)]">{fmtUSD(current)}</td>
                         <td className="px-4 py-2 text-right">
                           <div className="relative inline-block">
-                            <span className="absolute left-2 top-1.5 text-slate-400 text-xs">$</span>
+                            <span className="absolute left-2 top-1.5 text-[var(--fg-faint)] text-xs">$</span>
                             <input
                               type="number"
                               step="0.01"
@@ -181,7 +181,7 @@ export default function BudgetsPage() {
                           <button
                             onClick={() => save(it)}
                             disabled={!drafts[it.id] || saving === it.id}
-                            className="flex items-center gap-1 ml-auto bg-[var(--color-primary)] text-white px-3 py-1 rounded text-xs hover:bg-blue-800 disabled:opacity-40 disabled:cursor-not-allowed"
+                            className="flex items-center gap-1 ml-auto bg-[var(--accent)] text-white px-3 py-1 rounded text-xs hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
                           >
                             {saving === it.id ? <RefreshCw size={12} className="animate-spin" /> : <Save size={12} />}
                             Guardar
