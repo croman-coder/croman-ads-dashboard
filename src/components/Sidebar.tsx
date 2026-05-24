@@ -11,13 +11,25 @@ import {
   BarChart3,
   Settings,
   Bell,
+  ShieldCheck,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAlertCount } from '@/lib/use-alerts';
+import { useApprovalCount } from '@/lib/use-approval-count';
 
-const NAV = [
+type NavItem = {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+  showBadge?: boolean;
+  showApprovalBadge?: boolean;
+};
+
+const NAV: NavItem[] = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/alerts', label: 'Alertas', icon: Bell, showBadge: true },
+  { href: '/approvals', label: 'Aprobaciones', icon: ShieldCheck, showApprovalBadge: true },
   { href: '/campaigns', label: 'Campañas', icon: Megaphone },
   { href: '/ads', label: 'Anuncios', icon: ImageIcon },
   { href: '/audience', label: 'Audiencia', icon: Users },
@@ -29,6 +41,7 @@ const NAV = [
 export function Sidebar() {
   const pathname = usePathname();
   const alertCount = useAlertCount();
+  const approvalCount = useApprovalCount();
 
   return (
     <aside className="hidden md:flex w-60 shrink-0 flex-col border-r border-[var(--hairline)] bg-[var(--bg-base)] relative z-10">
@@ -44,7 +57,7 @@ export function Sidebar() {
         </Link>
       </div>
       <nav className="flex-1 px-2 py-3 space-y-px">
-        {NAV.map(({ href, label, icon: Icon, showBadge }) => {
+        {NAV.map(({ href, label, icon: Icon, showBadge, showApprovalBadge }) => {
           const active = pathname === href || (href !== '/' && pathname.startsWith(href));
           return (
             <Link
@@ -62,6 +75,11 @@ export function Sidebar() {
               {showBadge && alertCount > 0 && (
                 <span className="bg-[var(--danger)] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none min-w-[18px] text-center">
                   {alertCount > 99 ? '99+' : alertCount}
+                </span>
+              )}
+              {showApprovalBadge && approvalCount > 0 && (
+                <span className="bg-[var(--accent)] text-[var(--accent-fg)] text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none min-w-[18px] text-center">
+                  {approvalCount > 99 ? '99+' : approvalCount}
                 </span>
               )}
             </Link>
