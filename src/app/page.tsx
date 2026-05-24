@@ -81,17 +81,16 @@ export default function Dashboard() {
     .slice(0, 10);
 
   return (
-    <div className="flex min-h-screen relative">
-      <div className="orb orb-1" />
-      <div className="orb orb-2" />
+    <div className="flex min-h-screen">
       <Sidebar />
-      <div className="flex-1 flex flex-col relative z-10">
+      <div className="flex-1 flex flex-col">
         <TopBar selected={account} onSelect={setAccount} />
-        <main className="flex-1 p-6 space-y-6 max-w-[1600px] mx-auto w-full">
-          <div className="flex items-center justify-between flex-wrap gap-3 fade-in">
+        <main className="flex-1 px-8 py-8 space-y-8 max-w-[1500px] mx-auto w-full">
+          <div className="flex items-end justify-between flex-wrap gap-4 fade-in">
             <div>
-              <h1 className="text-3xl font-bold tracking-tight text-white">Dashboard</h1>
-              <p className="text-sm text-[var(--fg-muted)] mt-1">Resumen general · cuenta activa</p>
+              <p className="text-[11px] uppercase tracking-[0.16em] text-[var(--fg-muted)] mb-1">Panel de control</p>
+              <h1 className="display text-5xl text-[var(--fg)]">Dashboard</h1>
+              <p className="text-sm text-[var(--fg-muted)] mt-2">Resumen ejecutivo · cuenta seleccionada</p>
             </div>
             <DateRangePicker value={range} onChange={setRange} />
           </div>

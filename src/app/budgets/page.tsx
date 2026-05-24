@@ -54,12 +54,18 @@ export default function BudgetsPage() {
 
   useEffect(() => { load(); }, [load]);
 
+  const BUDGET_CAP = 1000;
+
   async function save(item: Item) {
     const value = drafts[item.id];
     if (!value) return;
     const amount = Number(value);
     if (!Number.isFinite(amount) || amount <= 0) {
       push('Monto inválido', 'error');
+      return;
+    }
+    if (amount > BUDGET_CAP) {
+      push(`Excede tope USD ${BUDGET_CAP}`, 'error');
       return;
     }
     const type: 'daily' | 'lifetime' = item.daily_budget ? 'daily' : 'lifetime';
@@ -101,8 +107,8 @@ export default function BudgetsPage() {
 
           {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">{error}</div>}
 
-          <div className="bg-amber-50 border border-amber-200 rounded px-4 py-3 text-sm text-amber-900">
-            <strong>⚠ Atención:</strong> los cambios de presupuesto son inmediatos y afectan gasto real. Revisá monto antes de guardar.
+          <div className="bg-[oklch(0.78_0.155_80_/_0.1)] border border-[var(--warning)] rounded px-4 py-3 text-sm text-[var(--fg)]">
+            <strong className="text-[var(--warning)]">Atención:</strong> cambios de presupuesto son inmediatos y afectan gasto real. <strong>Tope máximo USD {BUDGET_CAP}</strong>. Revisar monto antes de guardar.
           </div>
 
           <div className="bg-white border border-[var(--color-border)] rounded overflow-hidden">
@@ -148,10 +154,16 @@ export default function BudgetsPage() {
                             <input
                               type="number"
                               step="0.01"
+                              min={0}
+                              max={BUDGET_CAP}
                               value={drafts[it.id] ?? ''}
                               placeholder={current.toString()}
                               onChange={(e) => setDrafts((d) => ({ ...d, [it.id]: e.target.value }))}
-                              className="w-28 pl-6 pr-2 py-1 border border-[var(--color-border)] rounded text-sm font-mono text-right focus:outline-none focus:border-[var(--color-primary)]"
+                              className={`w-28 pl-6 pr-2 py-1 border rounded text-sm font-mono text-right focus:outline-none focus:border-[var(--accent)] ${
+                                Number(drafts[it.id]) > BUDGET_CAP
+                                  ? 'border-[var(--danger)] bg-[oklch(0.65_0.20_25_/_0.1)]'
+                                  : 'border-[var(--hairline)] bg-[var(--surface)] text-[var(--fg)]'
+                              }`}
                             />
                           </div>
                         </td>
