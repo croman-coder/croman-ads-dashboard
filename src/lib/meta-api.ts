@@ -388,3 +388,11 @@ export async function getInsights(
   const r = await metaGet(`/${id}/insights`, params);
   return r.data;
 }
+
+export async function getCurrentBudget(objectId: string): Promise<{ amount: number; type: 'daily' | 'lifetime' } | null> {
+  const r = await metaGet(`/${objectId}`, { fields: 'daily_budget,lifetime_budget' }, { paginate: false });
+  const row = (Array.isArray(r.data) ? r.data[0] : r) as { daily_budget?: string; lifetime_budget?: string };
+  if (row?.daily_budget) return { amount: Number(row.daily_budget) / 100, type: 'daily' };
+  if (row?.lifetime_budget) return { amount: Number(row.lifetime_budget) / 100, type: 'lifetime' };
+  return null;
+}
