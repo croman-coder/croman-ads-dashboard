@@ -277,6 +277,60 @@ main { animation: spring-in 580ms var(--ease-spring) both; }
 }
 .lift:hover { transform: translateY(-3px); box-shadow: var(--shadow-pop); }
 
+/* Gradient CTA — saleads-style aurora button */
+.btn-gradient {
+  background: linear-gradient(135deg, oklch(0.52 0.22 278) 0%, oklch(0.62 0.26 330) 100%);
+  color: #ffffff;
+  border: 1px solid transparent;
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0;
+  border-radius: var(--radius);
+  transition: all 220ms var(--ease-spring);
+  box-shadow: 0 2px 6px rgba(82, 56, 220, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.10);
+  position: relative;
+  overflow: hidden;
+}
+.btn-gradient::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, oklch(0.62 0.26 330) 0%, oklch(0.72 0.22 30) 100%);
+  opacity: 0;
+  transition: opacity 240ms var(--ease-out);
+  z-index: 0;
+}
+.btn-gradient > * { position: relative; z-index: 1; }
+.btn-gradient:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(82, 56, 220, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+.btn-gradient:hover::before { opacity: 1; }
+.btn-gradient:active { transform: translateY(0); }
+.btn-gradient:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+.btn-gradient:disabled::before { opacity: 0; }
+
+/* Soft pop card — for KPI hero tiles */
+.card-pop {
+  background: var(--bg-elevated);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+  box-shadow: 0 1px 3px rgba(10, 10, 12, 0.06), 0 8px 24px rgba(10, 10, 12, 0.06);
+  transition: transform 240ms var(--ease-spring), box-shadow 240ms var(--ease-out);
+}
+.card-pop:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(10, 10, 12, 0.08), 0 16px 40px rgba(10, 10, 12, 0.10);
+}
+
+/* Onboarding mascot bubble */
+@keyframes float-y {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+.mascot {
+  animation: float-y 3s ease-in-out infinite;
+}
+
 /* Vivid gradient accent backgrounds for KPI tiles */
 .bg-indigo-wash { background: linear-gradient(135deg, oklch(0.52 0.22 278 / 0.10), oklch(0.52 0.22 278 / 0.02)); }
 .bg-coral-wash  { background: linear-gradient(135deg, oklch(0.72 0.22 30 / 0.12), oklch(0.72 0.22 30 / 0.02)); }

@@ -189,9 +189,9 @@ export default function CampaignsPage() {
                 <span className="text-[var(--success)] font-medium">{counts.active}</span> entregando · <span className="text-[var(--fg-soft)] font-medium">{counts.paused}</span> en pausa · {counts.total} totales
               </p>
             </div>
-            <Link href="/campaigns/new" className="btn-primary px-4 py-2.5 flex items-center gap-2">
+            <Link href="/creative/new" className="btn-gradient px-5 py-2.5 flex items-center gap-2">
               <Plus size={14} />
-              Nueva campaña
+              Nueva estrategia
             </Link>
           </header>
 

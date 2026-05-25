@@ -13,6 +13,7 @@ import {
   Bell,
   ShieldCheck,
   Sparkles,
+  FolderOpen,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -44,6 +45,7 @@ const SECTIONS: NavSection[] = [
       { href: '/creative/new', label: 'Crear con IA', icon: Sparkles },
       { href: '/campaigns', label: 'Campañas', icon: Megaphone },
       { href: '/ads', label: 'Anuncios', icon: ImageIcon },
+      { href: '/library', label: 'Biblioteca', icon: FolderOpen },
       { href: '/audience', label: 'Audiencia', icon: Users },
       { href: '/budgets', label: 'Presupuestos', icon: Wallet },
     ],

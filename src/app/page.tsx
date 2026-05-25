@@ -8,6 +8,7 @@ import { KpiCard } from '@/components/KpiCard';
 import { DateRangePicker } from '@/components/DateRangePicker';
 import { AiInsights } from '@/components/AiInsights';
 import { TopPerformer } from '@/components/TopPerformer';
+import { FloatingHelper } from '@/components/FloatingHelper';
 import { fmt, fmtInt, fmtUSD } from '@/lib/utils';
 import {
   BarChart,
@@ -353,6 +354,12 @@ export default function Dashboard() {
           </section>
         </main>
       </div>
+      <FloatingHelper
+        id="dashboard_first_run"
+        tag="✨"
+        title="¡Bienvenido a Croman Ads!"
+        body="Empezá explorando Insights para ver alertas automáticas, o creá tu primera pauta con IA desde el menú lateral."
+      />
     </div>
   );
 }

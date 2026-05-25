@@ -300,7 +300,7 @@ export default function NewCreativePage() {
               <button
                 onClick={generate}
                 disabled={generating || !brief.trim() || assets.length === 0}
-                className="btn-primary w-full px-5 py-3.5 rounded-md flex items-center justify-center gap-2 text-sm disabled:opacity-40 disabled:cursor-not-allowed"
+                className="btn-gradient w-full px-5 py-3.5 flex items-center justify-center gap-2 text-sm"
               >
                 {generating ? (
                   <>

@@ -223,8 +223,7 @@ export default function CreativeReviewPage() {
             <button
               onClick={launch}
               disabled={!allApproved || launching}
-              className="btn-primary px-5 py-2.5 flex items-center gap-2 relative overflow-hidden"
-              style={!allApproved ? { background: 'linear-gradient(135deg, var(--accent), oklch(0.62 0.26 330))' } : undefined}
+              className="btn-gradient px-5 py-2.5 flex items-center gap-2"
             >
               {launching ? <Loader2 size={14} className="animate-spin" /> : <Rocket size={14} />}
               Lanzar estrategia
