@@ -7,6 +7,7 @@ import { ToastStack } from '@/components/Toast';
 import { useToasts } from '@/lib/use-toasts';
 import { useAccount } from '@/lib/use-account';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { PasswordInput } from '@/components/PasswordInput';
 import {
   User as UserIcon,
   Shield,
@@ -221,10 +222,10 @@ export default function SettingsPage() {
                 <p className="text-[12px] text-[var(--fg-muted)] mb-5">Mínimo 8 caracteres. Sesión se mantiene activa.</p>
                 <form onSubmit={changePasswordFn} className="space-y-4">
                   <Field label="Contraseña actual">
-                    <input type="password" value={currentPwd} onChange={(e) => setCurrentPwd(e.target.value)} autoComplete="current-password" required className="input" />
+                    <PasswordInput value={currentPwd} onChange={(e) => setCurrentPwd(e.target.value)} autoComplete="current-password" required inputClassName="input" />
                   </Field>
                   <Field label="Nueva contraseña">
-                    <input type="password" value={newPwd} onChange={(e) => setNewPwd(e.target.value)} autoComplete="new-password" minLength={8} required className="input" />
+                    <PasswordInput value={newPwd} onChange={(e) => setNewPwd(e.target.value)} autoComplete="new-password" minLength={8} required inputClassName="input" />
                   </Field>
                   <button type="submit" disabled={pwdSaving || !currentPwd || newPwd.length < 8} className="btn-primary px-4 py-2 flex items-center gap-2 text-sm">
                     {pwdSaving ? <Loader2 size={14} className="animate-spin" /> : <KeyRound size={14} />}
@@ -255,7 +256,7 @@ export default function SettingsPage() {
                     </select>
                   </Field>
                   <Field label="Contraseña inicial (≥8)">
-                    <input type="text" minLength={8} required value={inv.password} onChange={(e) => setInv({ ...inv, password: e.target.value })} className="input" />
+                    <PasswordInput minLength={8} required value={inv.password} onChange={(e) => setInv({ ...inv, password: e.target.value })} inputClassName="input" />
                   </Field>
                   <div className="md:col-span-4 flex justify-end">
                     <button type="submit" disabled={inviting} className="btn-gradient px-4 py-2 flex items-center gap-2 text-sm">
@@ -423,7 +424,7 @@ function EditUserModal({ user, onCancel, onSave }: { user: DbUser; onCancel: () 
 
         <div className="mt-4">
           <Field label="Nueva contraseña (opcional, ≥8)">
-            <input type="text" value={newPwd} onChange={(e) => setNewPwd(e.target.value)} className="input" />
+            <PasswordInput value={newPwd} onChange={(e) => setNewPwd(e.target.value)} inputClassName="input" />
           </Field>
         </div>
 
