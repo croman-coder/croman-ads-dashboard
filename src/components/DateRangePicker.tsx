@@ -47,14 +47,14 @@ export function DateRangePicker({ value, onChange }: Props) {
           setPreset(e.target.value);
           onChange(calcRange(e.target.value));
         }}
-        className="bg-[var(--surface)] border border-[var(--border)] rounded-lg text-sm text-white px-3 py-1.5 cursor-pointer focus:outline-none focus:border-[var(--color-primary)] hover:border-[var(--color-primary)]/50 transition-colors"
+        className="bg-[var(--bg-elevated)] border border-[var(--border)] rounded-md text-sm text-[var(--fg)] px-3 py-1.5 cursor-pointer focus:outline-none focus:border-[var(--accent)] hover:border-[var(--border-strong)] transition-colors shadow-sm"
       >
         {PRESETS.map((p) => (
-          <option key={p.value} value={p.value} className="bg-[var(--bg-elevated)]">{p.label}</option>
+          <option key={p.value} value={p.value} className="bg-[var(--bg-elevated)] text-[var(--fg)]">{p.label}</option>
         ))}
       </select>
       {value.since && value.until && (
-        <span className="text-xs text-[var(--fg-muted)] font-mono hidden lg:inline">
+        <span className="text-xs text-[var(--fg-muted)] font-[family-name:var(--font-mono)] hidden lg:inline">
           {value.since} → {value.until}
         </span>
       )}

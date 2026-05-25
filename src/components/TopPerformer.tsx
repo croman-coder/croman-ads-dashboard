@@ -107,17 +107,23 @@ export function TopPerformer({ rows, accountId }: { rows: Row[]; accountId: stri
 
           {/* Stats */}
           <div className="grid grid-cols-3 divide-x divide-[var(--hairline)]">
-            <div className="px-4 py-4">
+            <div className="px-3 py-4 min-w-0">
               <div className="eyebrow">Leads</div>
-              <div className="numeric text-2xl text-[var(--data)] mt-1">{fmtInt(winner.leads)}</div>
+              <div className="numeric text-xl text-[oklch(0.52_0.18_200)] mt-1 truncate" title={String(winner.leads)}>
+                {fmtInt(winner.leads)}
+              </div>
             </div>
-            <div className="px-4 py-4">
+            <div className="px-3 py-4 min-w-0">
               <div className="eyebrow">CPL</div>
-              <div className="numeric text-2xl text-[var(--success)] mt-1">{fmtUSD(winner.cpl)}</div>
+              <div className="numeric text-xl text-[var(--success)] mt-1 truncate" title={fmtUSD(winner.cpl)}>
+                {fmtUSD(winner.cpl)}
+              </div>
             </div>
-            <div className="px-4 py-4">
+            <div className="px-3 py-4 min-w-0">
               <div className="eyebrow">Spend</div>
-              <div className="numeric text-2xl text-[var(--fg)] mt-1">{fmtUSD(Number(winner.spend))}</div>
+              <div className="numeric text-xl text-[var(--fg)] mt-1 truncate" title={fmtUSD(Number(winner.spend))}>
+                {fmtUSD(Number(winner.spend))}
+              </div>
             </div>
           </div>
         </>

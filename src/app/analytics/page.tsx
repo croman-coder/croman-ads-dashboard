@@ -348,7 +348,7 @@ function TableRows({ rows, showImp }: { rows: Array<{ name: string; spend: numbe
               {showImp && <td className="px-3 py-2 text-right text-[var(--fg-soft)]">{fmtInt(r.impressions)}</td>}
               <td className="px-3 py-2 text-right">{fmtUSD(r.spend)}</td>
               <td className="px-3 py-2 text-right">{r.leads || '—'}</td>
-              <td className={`px-3 py-2 text-right font-semibold ${r.cpl > 5 ? 'text-[var(--danger)]' : r.cpl > 3 ? 'text-[var(--warning)]' : 'text-[var(--color-success)]'}`}>
+              <td className={`px-3 py-2 text-right font-semibold ${r.cpl > 5 ? 'text-[var(--danger)]' : r.cpl > 3 ? 'text-[var(--warning)]' : 'text-[var(--success)]'}`}>
                 {r.leads ? fmtUSD(r.cpl) : '—'}
               </td>
             </tr>

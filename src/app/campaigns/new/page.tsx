@@ -186,13 +186,13 @@ export default function NewCampaignWizard() {
                 <div key={s} className="flex items-center flex-1">
                   <div
                     className={`w-8 h-8 rounded-full grid place-items-center text-xs font-bold ${
-                      i < step ? 'bg-emerald-500 text-white' : i === step ? 'bg-[var(--accent)] text-white' : 'bg-slate-200 text-[var(--fg-muted)]'
+                      i < step ? 'bg-emerald-500 text-white' : i === step ? 'bg-[var(--accent)] text-white' : 'bg-[var(--surface-2)] text-[var(--fg-muted)]'
                     }`}
                   >
                     {i < step ? <Check size={14} /> : i + 1}
                   </div>
                   <div className={`ml-2 text-sm ${i === step ? 'font-semibold text-[var(--fg)]' : 'text-[var(--fg-muted)]'}`}>{s}</div>
-                  {i < STEPS.length - 1 && <div className={`flex-1 mx-3 h-0.5 ${i < step ? 'bg-emerald-500' : 'bg-slate-200'}`} />}
+                  {i < STEPS.length - 1 && <div className={`flex-1 mx-3 h-0.5 ${i < step ? 'bg-emerald-500' : 'bg-[var(--surface-2)]'}`} />}
                 </div>
               ))}
             </div>

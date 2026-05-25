@@ -4,8 +4,11 @@ interface Props {
   label: string;
   value: string;
   hint?: string;
+  /** Actual direction of change (matches arrow rendered) */
   trend?: 'up' | 'down' | 'flat';
   trendValue?: string;
+  /** When true (CPL, CPM, frequency), 'down' = green and 'up' = red */
+  lowerBetter?: boolean;
   accent?: 'primary' | 'success' | 'warning' | 'destructive' | 'data' | 'amber';
 }
 
@@ -36,7 +39,12 @@ const DOT_COLOR = {
   amber: 'bg-[oklch(0.78_0.16_75)]',
 } as const;
 
-export function KpiCard({ label, value, hint, trend, trendValue, accent = 'primary' }: Props) {
+export function KpiCard({ label, value, hint, trend, trendValue, lowerBetter, accent = 'primary' }: Props) {
+  // Color polarity: if lowerBetter, invert; else direct.
+  let isGood: boolean | null = null;
+  if (trend === 'up') isGood = !lowerBetter;
+  else if (trend === 'down') isGood = !!lowerBetter;
+
   return (
     <div className={cn('card lift p-5 relative overflow-hidden', WASH[accent])}>
       <div className="flex items-center gap-2 mb-3 relative">
@@ -52,12 +60,14 @@ export function KpiCard({ label, value, hint, trend, trendValue, accent = 'prima
             <span
               className={cn(
                 'font-semibold inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px]',
-                trend === 'up' && 'bg-[oklch(0.58_0.20_152_/_0.12)] text-[var(--success)]',
-                trend === 'down' && 'bg-[oklch(0.58_0.24_22_/_0.12)] text-[var(--danger)]',
-                trend === 'flat' && 'bg-[var(--surface)] text-[var(--fg-muted)]'
+                isGood === true && 'bg-[oklch(0.58_0.20_152_/_0.14)] text-[var(--success)]',
+                isGood === false && 'bg-[oklch(0.58_0.24_22_/_0.14)] text-[var(--danger)]',
+                isGood === null && 'bg-[var(--surface)] text-[var(--fg-muted)]'
               )}
             >
-              {trend === 'up' && '↑'} {trend === 'down' && '↓'} {trendValue}
+              {trend === 'up' && '↑'}
+              {trend === 'down' && '↓'}
+              {trendValue}
             </span>
           )}
           {hint && <span>{hint}</span>}

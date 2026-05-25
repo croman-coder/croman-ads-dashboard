@@ -196,9 +196,10 @@ export default function Dashboard() {
               label="CPL"
               value={fmtUSD(cpl)}
               accent={cpl > 5 ? 'destructive' : cpl > 3 ? 'warning' : 'success'}
-              trend={dCpl.trend === 'up' ? 'down' : dCpl.trend === 'down' ? 'up' : 'flat'}
+              trend={dCpl.trend}
               trendValue={dCpl.value ? `${dCpl.value > 0 ? '+' : ''}${dCpl.value.toFixed(1)}%` : ''}
               hint="menor es mejor"
+              lowerBetter
             />
             <KpiCard
               label="CTR"
@@ -212,9 +213,10 @@ export default function Dashboard() {
               label="CPM"
               value={fmtUSD(cpm)}
               accent="primary"
-              trend={dCpm.trend === 'up' ? 'down' : dCpm.trend === 'down' ? 'up' : 'flat'}
+              trend={dCpm.trend}
               trendValue={dCpm.value ? `${dCpm.value > 0 ? '+' : ''}${dCpm.value.toFixed(1)}%` : ''}
               hint="menor es mejor"
+              lowerBetter
             />
           </section>
 
