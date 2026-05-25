@@ -1,13 +1,12 @@
 import { NextResponse } from 'next/server';
-import bcrypt from 'bcryptjs';
 import { createSessionToken, SESSION_CONFIG } from '@/lib/auth';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { findUserByEmail, verifyPassword, touchLastLogin, audit } from '@/lib/user-store';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
   try {
-    // Rate limit: 5 login attempts per 15 min per IP
     const ip = getClientIp(req);
     const rl = rateLimit(`login:${ip}`, 5, 900);
     if (!rl.allowed) {
@@ -30,25 +29,21 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Credenciales inválidas' }, { status: 401 });
     }
 
-    const expectedEmail = process.env.AUTH_EMAIL;
-    const hashB64 = process.env.AUTH_PASSWORD_HASH_B64;
-    const hashRaw = process.env.AUTH_PASSWORD_HASH;
-    const passwordHash = hashB64 ? Buffer.from(hashB64, 'base64').toString('utf8') : hashRaw;
-    if (!expectedEmail || !passwordHash) {
-      return NextResponse.json({ error: 'Auth no configurada (env vars missing)' }, { status: 500 });
-    }
-
-    if (email.toLowerCase().trim() !== expectedEmail.toLowerCase().trim()) {
+    const user = await findUserByEmail(email.trim());
+    if (!user || !user.is_active) {
       return NextResponse.json({ error: 'Credenciales inválidas' }, { status: 401 });
     }
 
-    const ok = await bcrypt.compare(password, passwordHash);
+    const ok = await verifyPassword(password, user.password_hash);
     if (!ok) {
       return NextResponse.json({ error: 'Credenciales inválidas' }, { status: 401 });
     }
 
-    const token = await createSessionToken(email);
-    const res = NextResponse.json({ ok: true, email });
+    await touchLastLogin(user.id);
+    await audit({ user_id: user.id, user_email: user.email, action: 'login', ip });
+
+    const token = await createSessionToken({ userId: user.id, email: user.email, role: user.role });
+    const res = NextResponse.json({ ok: true, email: user.email, role: user.role, full_name: user.full_name });
     res.cookies.set(SESSION_CONFIG.cookieName, token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',

@@ -9,7 +9,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:cov": "vitest run --coverage",
-    "db:migrate": "tsx scripts/db/migrate.ts"
+    "db:migrate": "tsx scripts/db/migrate.ts",
+    "db:seed-admin": "tsx scripts/db/seed-admin.ts"
   },
   "dependencies": {
     "@vercel/blob": "^2.4.0",

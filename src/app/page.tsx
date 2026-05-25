@@ -5,7 +5,7 @@ import { Sidebar } from '@/components/Sidebar';
 import { TopBar } from '@/components/TopBar';
 import { useAccount } from '@/lib/use-account';
 import { KpiCard } from '@/components/KpiCard';
-import { DateRangePicker } from '@/components/DateRangePicker';
+import { DateRangePicker, type Comparison } from '@/components/DateRangePicker';
 import { AiInsights } from '@/components/AiInsights';
 import { TopPerformer } from '@/components/TopPerformer';
 import { FloatingHelper } from '@/components/FloatingHelper';
@@ -34,9 +34,8 @@ type CampaignRow = {
   msgs: number;
 };
 
-function shiftRangeBack(since?: string, until?: string): { since: string; until: string } | null {
+function defaultPrev(since?: string, until?: string): { since: string; until: string } {
   if (!since || !until) {
-    // default range = last 30 days; previous = the 30 before
     const now = new Date();
     const e = new Date(now); e.setDate(e.getDate() - 30);
     const s = new Date(now); s.setDate(s.getDate() - 60);
@@ -58,6 +57,7 @@ function pct(curr: number, prev: number): { value: number; trend: 'up' | 'down' 
 export default function Dashboard() {
   const { account, setAccount } = useAccount();
   const [range, setRange] = useState<{ since?: string; until?: string }>({});
+  const [comparison, setComparison] = useState<Comparison>({ mode: 'prev_period' });
   const [rows, setRows] = useState<CampaignRow[]>([]);
   const [prevRows, setPrevRows] = useState<CampaignRow[]>([]);
   const [loading, setLoading] = useState(false);
@@ -71,25 +71,36 @@ export default function Dashboard() {
     if (range.since) qs.set('since', range.since);
     if (range.until) qs.set('until', range.until);
 
-    const prev = shiftRangeBack(range.since, range.until);
-    const qsPrev = new URLSearchParams({ account_id: account, level: 'campaign' });
-    if (prev) {
-      qsPrev.set('since', prev.since);
-      qsPrev.set('until', prev.until);
+    // Comparison range: explicit from picker, or default prev_period if mode==='prev_period' without bounds.
+    let cmp: { since?: string; until?: string } | null = null;
+    if (comparison.mode === 'none') {
+      cmp = null;
+    } else if (comparison.since && comparison.until) {
+      cmp = { since: comparison.since, until: comparison.until };
+    } else if (comparison.mode === 'prev_period') {
+      cmp = defaultPrev(range.since, range.until);
     }
 
-    Promise.all([
+    const fetches: Array<Promise<{ data?: CampaignRow[]; error?: string }>> = [
       fetch(`/api/insights?${qs}`).then((r) => r.json()),
-      fetch(`/api/insights?${qsPrev}`).then((r) => r.json()),
-    ])
-      .then(([curr, p]) => {
+    ];
+    if (cmp) {
+      const qsPrev = new URLSearchParams({ account_id: account, level: 'campaign' });
+      qsPrev.set('since', cmp.since!);
+      qsPrev.set('until', cmp.until!);
+      fetches.push(fetch(`/api/insights?${qsPrev}`).then((r) => r.json()));
+    }
+
+    Promise.all(fetches)
+      .then((results) => {
+        const curr = results[0];
         if (curr.error) throw new Error(curr.error);
         setRows(curr.data || []);
-        setPrevRows(p?.data || []);
+        setPrevRows(results[1]?.data || []);
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
-  }, [account, range.since, range.until]);
+  }, [account, range.since, range.until, comparison]);
 
   const totals = useMemo(
     () =>
@@ -159,7 +170,7 @@ export default function Dashboard() {
               <h1 className="display text-5xl text-[var(--fg)]">Dashboard</h1>
               <p className="text-sm text-[var(--fg-muted)] mt-2">Resumen ejecutivo · cuenta seleccionada</p>
             </div>
-            <DateRangePicker value={range} onChange={setRange} />
+            <DateRangePicker value={range} onChange={setRange} comparison={comparison} onComparisonChange={setComparison} />
           </div>
 
           {error && (
