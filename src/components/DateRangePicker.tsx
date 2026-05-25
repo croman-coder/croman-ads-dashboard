@@ -152,7 +152,10 @@ export function DateRangePicker({ value, onChange, comparison, onComparisonChang
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-1.5 w-[420px] card shadow-xl z-30 overflow-hidden p-4 fade-in">
+        <div
+          className="absolute right-0 top-full mt-2 w-[440px] max-w-[calc(100vw-2rem)] bg-[var(--bg-elevated)] border border-[var(--border)] rounded-lg z-50 overflow-hidden p-5 fade-in"
+          style={{ boxShadow: '0 16px 48px rgba(10, 10, 12, 0.18), 0 4px 12px rgba(10, 10, 12, 0.08)' }}
+        >
           <div className="grid grid-cols-2 gap-5">
             {/* Primary range */}
             <div>
