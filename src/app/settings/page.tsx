@@ -374,6 +374,7 @@ export default function SettingsPage() {
   );
 }
 
+type OpResult = { ok: boolean; status?: number; error_code?: number; error_message?: string };
 type DiagAccount = {
   account_id: string;
   account_name: string;
@@ -384,6 +385,7 @@ type DiagAccount = {
   error_subcode?: number;
   error_message?: string;
   account_status?: number;
+  ops?: { meta: OpResult; campaigns: OpResult; ads: OpResult; insights: OpResult };
 };
 
 type DiagResponse = {
@@ -512,38 +514,42 @@ function MetaDiagnostic({ push }: { push: (m: string, t: 'success' | 'error') =>
                 <thead>
                   <tr className="text-[10px] uppercase tracking-[0.14em] text-[var(--fg-muted)] font-semibold border-b border-[var(--hairline)]">
                     <th className="px-6 py-3 text-left">Cuenta</th>
-                    <th className="px-4 py-3 text-left">Estado</th>
-                    <th className="px-4 py-3 text-left">Error</th>
-                    <th className="px-4 py-3 text-right">Cómo arreglar</th>
+                    <th className="px-3 py-3 text-center" title="GET /act_X (metadata)">META</th>
+                    <th className="px-3 py-3 text-center" title="GET /act_X/campaigns">CAMP.</th>
+                    <th className="px-3 py-3 text-center" title="GET /act_X/ads">ADS</th>
+                    <th className="px-3 py-3 text-center" title="GET /act_X/insights">INSIGHTS</th>
+                    <th className="px-4 py-3 text-left">Detalle error</th>
                   </tr>
                 </thead>
                 <tbody>
                   {data.accounts.map((a) => (
                     <tr key={a.account_id} className="border-t border-[var(--hairline)] hover:bg-[var(--surface)] align-top">
                       <td className="px-6 py-3">
-                        <div className="text-[var(--fg)] font-medium">{a.account_name}</div>
+                        <div className="text-[var(--fg)] font-medium text-[13px]">{a.account_name}</div>
                         <div className="text-[10px] text-[var(--fg-faint)] font-[family-name:var(--font-mono)]">{a.account_id} · {a.currency || '—'}</div>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-3 py-3 text-center"><OpDot op={a.ops?.meta} /></td>
+                      <td className="px-3 py-3 text-center"><OpDot op={a.ops?.campaigns} /></td>
+                      <td className="px-3 py-3 text-center"><OpDot op={a.ops?.ads} /></td>
+                      <td className="px-3 py-3 text-center"><OpDot op={a.ops?.insights} /></td>
+                      <td className="px-4 py-3 text-[11px] text-[var(--fg-muted)] max-w-md">
                         {a.ok ? (
-                          <span className="inline-flex items-center gap-1.5 text-[11px] text-[var(--success)]"><CheckCircle2 size={12} /> OK</span>
-                        ) : a.error_code === 200 ? (
-                          <span className="inline-flex items-center gap-1.5 text-[11px] text-[var(--danger)]"><XCircle size={12} /> Sin permiso (#200)</span>
+                          <span className="text-[var(--success)]">Todo OK</span>
                         ) : (
-                          <span className="inline-flex items-center gap-1.5 text-[11px] text-[var(--warning)]"><AlertTriangle size={12} /> Error {a.error_code || a.status || '?'}</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-[11px] text-[var(--fg-muted)] max-w-md">{a.error_message || '—'}</td>
-                      <td className="px-4 py-3 text-right">
-                        {a.ok ? '—' : (
-                          <a
-                            href={`https://business.facebook.com/settings/ad-accounts/${a.account_id.replace(/^act_/, '')}?business_id=`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-[11px] text-[var(--accent)] hover:underline"
-                          >
-                            Asignar VALEN_ADS <ExternalLink size={10} />
-                          </a>
+                          <div className="space-y-1">
+                            {a.ops?.campaigns && !a.ops.campaigns.ok && (
+                              <div><span className="font-semibold text-[var(--danger)]">campaigns</span>: {a.ops.campaigns.error_message}</div>
+                            )}
+                            {a.ops?.ads && !a.ops.ads.ok && (
+                              <div><span className="font-semibold text-[var(--danger)]">ads</span>: {a.ops.ads.error_message}</div>
+                            )}
+                            {a.ops?.insights && !a.ops.insights.ok && (
+                              <div><span className="font-semibold text-[var(--danger)]">insights</span>: {a.ops.insights.error_message}</div>
+                            )}
+                            {a.ops?.meta && !a.ops.meta.ok && (
+                              <div><span className="font-semibold text-[var(--danger)]">meta</span>: {a.ops.meta.error_message}</div>
+                            )}
+                          </div>
                         )}
                       </td>
                     </tr>
@@ -577,6 +583,17 @@ function MetaDiagnostic({ push }: { push: (m: string, t: 'success' | 'error') =>
         </>
       )}
     </div>
+  );
+}
+
+function OpDot({ op }: { op?: OpResult }) {
+  if (!op) return <span className="text-[var(--fg-faint)]">—</span>;
+  if (op.ok) return <CheckCircle2 size={14} className="text-[var(--success)] inline" />;
+  const label = op.error_code === 200 ? '403' : (op.error_code ?? op.status ?? '!');
+  return (
+    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[var(--danger)]" title={op.error_message}>
+      <XCircle size={12} /> {label}
+    </span>
   );
 }
 

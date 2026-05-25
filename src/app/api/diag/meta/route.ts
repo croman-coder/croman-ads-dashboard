@@ -4,6 +4,13 @@ import { requireSession } from '@/lib/api-auth';
 
 export const dynamic = 'force-dynamic';
 
+type OpResult = {
+  ok: boolean;
+  status?: number;
+  error_code?: number;
+  error_message?: string;
+};
+
 type AccountCheck = {
   account_id: string;
   account_name: string;
@@ -15,6 +22,12 @@ type AccountCheck = {
   error_message?: string;
   account_status?: number;
   disable_reason?: number | string | null;
+  ops?: {
+    meta: OpResult;
+    campaigns: OpResult;
+    ads: OpResult;
+    insights: OpResult;
+  };
 };
 
 type PermsResult = {
@@ -68,36 +81,68 @@ async function probePermissions(): Promise<PermsResult | { error: string }> {
   }
 }
 
+function parseMetaError(e: unknown): OpResult {
+  const msg = e instanceof Error ? e.message : 'Unknown';
+  const codeMatch = msg.match(/\(#(\d+)\)/);
+  const statusMatch = msg.match(/Meta API (\d+)/);
+  return {
+    ok: false,
+    status: statusMatch ? Number(statusMatch[1]) : undefined,
+    error_code: codeMatch ? Number(codeMatch[1]) : undefined,
+    error_message: msg.length > 200 ? msg.slice(0, 200) + '…' : msg,
+  };
+}
+
+async function probeOp(fn: () => Promise<unknown>): Promise<OpResult> {
+  try {
+    await fn();
+    return { ok: true };
+  } catch (e) {
+    return parseMetaError(e);
+  }
+}
+
 async function probeAccount(id: string, name: string): Promise<AccountCheck> {
   const actId = id.startsWith('act_') ? id : `act_${id}`;
+  let metaRes: OpResult = { ok: false };
+  let row: Record<string, unknown> = {};
   try {
     const r = await metaGet(`/${actId}`, {
       fields: 'name,currency,account_status,disable_reason',
     }, { paginate: false });
     const raw = Array.isArray(r.data) ? r.data[0] : r;
-    const row = (raw || {}) as Record<string, unknown>;
-    return {
-      account_id: id,
-      account_name: (row.name as string) || name,
-      currency: row.currency as string | undefined,
-      ok: true,
-      account_status: row.account_status as number | undefined,
-      disable_reason: (row.disable_reason as number | string | null) ?? null,
-    };
+    row = (raw || {}) as Record<string, unknown>;
+    metaRes = { ok: true };
   } catch (e) {
-    const msg = e instanceof Error ? e.message : 'Unknown';
-    // Parse Meta error format: "Meta API XXX: (#code) message"
-    const codeMatch = msg.match(/\(#(\d+)\)/);
-    const statusMatch = msg.match(/Meta API (\d+)/);
-    return {
-      account_id: id,
-      account_name: name,
-      ok: false,
-      status: statusMatch ? Number(statusMatch[1]) : undefined,
-      error_code: codeMatch ? Number(codeMatch[1]) : undefined,
-      error_message: msg.length > 240 ? msg.slice(0, 240) + '…' : msg,
-    };
+    metaRes = parseMetaError(e);
   }
+
+  // Probe the actual operations the dashboard performs.
+  // These are the calls that fail with "ads_read / ads_management permission"
+  // even when /me/permissions reports them granted, because Meta also checks
+  // the SPECIFIC asset access for that endpoint × ad account combo.
+  const [campaigns, ads, insights] = await Promise.all([
+    probeOp(() => metaGet(`/${actId}/campaigns`, { fields: 'id', limit: 1 })),
+    probeOp(() => metaGet(`/${actId}/ads`, { fields: 'id', limit: 1 })),
+    probeOp(() => metaGet(`/${actId}/insights`, { fields: 'spend', date_preset: 'last_7d', limit: 1 })),
+  ]);
+
+  const ops = { meta: metaRes, campaigns, ads, insights };
+  const allOk = metaRes.ok && campaigns.ok && ads.ok && insights.ok;
+  const firstFail = !metaRes.ok ? metaRes : !campaigns.ok ? campaigns : !ads.ok ? ads : !insights.ok ? insights : null;
+
+  return {
+    account_id: id,
+    account_name: (row.name as string) || name,
+    currency: row.currency as string | undefined,
+    account_status: row.account_status as number | undefined,
+    disable_reason: (row.disable_reason as number | string | null) ?? null,
+    ok: allOk,
+    status: firstFail?.status,
+    error_code: firstFail?.error_code,
+    error_message: firstFail?.error_message,
+    ops,
+  };
 }
 
 export async function GET() {
