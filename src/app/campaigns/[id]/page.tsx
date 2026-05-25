@@ -117,6 +117,8 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ id: s
   const [adsets, setAdsets] = useState<AdSet[]>([]);
   const [ads, setAds] = useState<Ad[]>([]);
   const [insights, setInsights] = useState<Insights | null>(null);
+  const [partialErrors, setPartialErrors] = useState<Record<string, string> | null>(null);
+  const [errorHint, setErrorHint] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>('multimedia');
@@ -126,13 +128,18 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ id: s
     if (!id) return;
     setLoading(true);
     fetch(`/api/campaign/${id}`)
-      .then((r) => r.json())
-      .then((j) => {
-        if (j.error) throw new Error(j.error);
+      .then(async (r) => ({ status: r.status, j: await r.json() }))
+      .then(({ status, j }) => {
+        if (status !== 200) {
+          setError(j.error || 'Error');
+          setErrorHint(j.hint || null);
+          return;
+        }
         setCampaign(j.campaign);
         setAdsets(j.adsets || []);
         setAds(j.ads || []);
         setInsights(j.insights);
+        setPartialErrors(j.partial_errors || null);
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
@@ -187,8 +194,25 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ id: s
         <Sidebar />
         <div className="flex-1 flex flex-col">
           <TopBar selected={account} onSelect={setAccount} />
-          <main className="flex-1 px-8 py-8 max-w-[1500px] mx-auto w-full">
-            <div className="card p-12 text-center text-[var(--danger)]">{error || 'No encontrada'}</div>
+          <main className="flex-1 px-8 py-8 max-w-[1100px] mx-auto w-full space-y-4">
+            <nav className="flex items-center gap-2 text-[12px] text-[var(--fg-muted)]">
+              <Link href="/campaigns" className="flex items-center gap-1 hover:text-[var(--fg)] transition-colors">
+                <ChevronLeft size={14} /> Campañas
+              </Link>
+            </nav>
+            <div className="card p-8">
+              <h2 className="display text-3xl text-[var(--danger)] mb-2">No se pudo cargar la campaña</h2>
+              <p className="text-sm text-[var(--fg-soft)] leading-relaxed">{error || 'No encontrada'}</p>
+              {errorHint && (
+                <p className="text-[12.5px] text-[var(--fg-muted)] mt-4 pt-4 border-t border-[var(--hairline)]">
+                  💡 {errorHint}
+                </p>
+              )}
+              <div className="mt-5 flex items-center gap-2">
+                <Link href="/settings" className="btn-ghost px-4 py-2 text-sm">Ir a /settings → Meta API</Link>
+                <Link href="/campaigns" className="btn-primary px-4 py-2 text-sm">Volver</Link>
+              </div>
+            </div>
           </main>
         </div>
       </div>
@@ -212,6 +236,22 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ id: s
             <span className="text-[var(--fg-faint)]">/</span>
             <span className="text-[var(--fg)] truncate">{campaign.name}</span>
           </nav>
+
+          {partialErrors && (
+            <div className="card border-[var(--warning)]/30 bg-[var(--warning)]/10 p-4 fade-in">
+              <p className="text-[13px] text-[var(--fg)] font-medium">Datos parciales</p>
+              <ul className="text-[11.5px] text-[var(--fg-muted)] mt-1.5 space-y-0.5">
+                {Object.entries(partialErrors).map(([k, v]) => (
+                  <li key={k}>
+                    <span className="font-[family-name:var(--font-mono)] text-[var(--warning)]">{k}</span>: {v.slice(0, 180)}
+                  </li>
+                ))}
+              </ul>
+              <p className="text-[11px] text-[var(--fg-faint)] mt-2">
+                La campaña carga, pero algunos sub-recursos fallaron. Ver <Link href="/settings" className="text-[var(--accent)] underline">/settings → Meta API</Link> para detalle.
+              </p>
+            </div>
+          )}
 
           {/* Header */}
           <header className="flex items-start justify-between gap-6 flex-wrap fade-in">
