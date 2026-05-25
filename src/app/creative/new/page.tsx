@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Sidebar } from '@/components/Sidebar';
 import { TopBar } from '@/components/TopBar';
 import { ToastStack } from '@/components/Toast';
@@ -20,6 +21,7 @@ const OBJECTIVES = [
 const TONES = ['Profesional', 'Cercano', 'Urgente', 'Aspiracional', 'Educativo', 'Promocional'];
 
 export default function NewCreativePage() {
+  const router = useRouter();
   const { account, setAccount } = useAccount();
   const { toasts, push, dismiss } = useToasts();
 
@@ -72,13 +74,22 @@ export default function NewCreativePage() {
       push('Describí qué tipo de pauta querés', 'error');
       return;
     }
+    if (assets.length === 0) {
+      push('Subí al menos un material', 'error');
+      return;
+    }
     setGenerating(true);
-    // Stub: future integration with Nanobanana/Gemini.
-    // For now, persist intent as approval proposal so the spec workflow approves before publishing.
-    setTimeout(() => {
+    // Persist draft to localStorage and route to review page where the
+    // copy approval flow generates 5 variations (stub for now; future:
+    // Gemini/Nanobanana). Nothing hits Meta until user launches from review.
+    try {
+      const draft = { brief, objective, tone, audience, budget, assets, account };
+      localStorage.setItem('croman_ads_creative_draft', JSON.stringify(draft));
+      router.push('/creative/review');
+    } catch {
       setGenerating(false);
-      push('Borrador guardado. Integración IA en próxima fase.', 'success');
-    }, 1200);
+      push('No se pudo guardar el borrador', 'error');
+    }
   };
 
   return (
