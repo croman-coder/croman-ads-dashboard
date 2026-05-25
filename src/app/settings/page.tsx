@@ -393,7 +393,7 @@ type DiagResponse = {
   permissions: { granted?: string[]; declined?: string[]; expired?: string[]; required_present?: { ads_read: boolean; ads_management: boolean; business_management: boolean }; error?: string };
   list_accounts_error?: string;
   accounts: DiagAccount[];
-  summary: { total: number; ok: number; failing: number; permission_errors: number };
+  summary: { total: number; ok: number; failing: number; permission_errors: number; rate_limited?: number };
   api_version: string;
   fetched_at: string;
 };
@@ -446,11 +446,12 @@ function MetaDiagnostic({ push }: { push: (m: string, t: 'success' | 'error') =>
       {data && (
         <>
           {/* Summary tiles */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 stagger">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 stagger">
             <DiagTile label="TOTAL CUENTAS" value={String(data.summary.total)} tone="info" />
             <DiagTile label="OK" value={String(data.summary.ok)} tone="success" />
             <DiagTile label="CON ERROR" value={String(data.summary.failing)} tone={data.summary.failing > 0 ? 'danger' : 'success'} />
             <DiagTile label="PERMISO (#200)" value={String(data.summary.permission_errors)} tone={data.summary.permission_errors > 0 ? 'warning' : 'success'} />
+            <DiagTile label="RATE LIMIT" value={String(data.summary.rate_limited || 0)} tone={(data.summary.rate_limited || 0) > 0 ? 'warning' : 'success'} />
           </div>
 
           {/* Token + permissions */}
@@ -558,6 +559,27 @@ function MetaDiagnostic({ push }: { push: (m: string, t: 'success' | 'error') =>
               </table>
             )}
           </section>
+
+          {/* Rate limit notice */}
+          {(data.summary.rate_limited || 0) > 0 && (
+            <section className="card p-6 border-[var(--warning)]/30 bg-[var(--warning)]/10">
+              <div className="flex items-start gap-3">
+                <AlertTriangle size={18} className="text-[var(--warning)] shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <h3 className="text-[var(--fg)] font-semibold mb-1">{data.summary.rate_limited} cuentas con rate limit</h3>
+                  <p className="text-[12.5px] text-[var(--fg-soft)] leading-relaxed">
+                    <span className="font-semibold">No es problema de permisos.</span> Meta limita requests por hora a nivel app + business use case (BUC).
+                    Esperar 15–60min y volver a chequear. Si pasa siempre con muchas cuentas:
+                  </p>
+                  <ul className="text-[12px] text-[var(--fg-muted)] mt-2 list-disc pl-5 space-y-0.5">
+                    <li>Considerar mover a Tier de App Marketing API (App Review)</li>
+                    <li>Reducir frecuencia de polling en dashboard</li>
+                    <li>Usar Insights API batch en lugar de calls individuales</li>
+                  </ul>
+                </div>
+              </div>
+            </section>
+          )}
 
           {/* How-to fix card */}
           {data.summary.permission_errors > 0 && (

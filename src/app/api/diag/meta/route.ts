@@ -145,6 +145,22 @@ async function probeAccount(id: string, name: string): Promise<AccountCheck> {
   };
 }
 
+// Run an async fn over items with bounded concurrency to avoid hitting Meta
+// BUC rate limits when probing dozens of accounts.
+async function withConcurrency<T, R>(items: T[], limit: number, fn: (t: T) => Promise<R>): Promise<R[]> {
+  const out: R[] = new Array(items.length);
+  let cursor = 0;
+  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (true) {
+      const i = cursor++;
+      if (i >= items.length) return;
+      out[i] = await fn(items[i]);
+    }
+  });
+  await Promise.all(workers);
+  return out;
+}
+
 export async function GET() {
   const session = await requireSession();
   if (!session) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
@@ -158,18 +174,27 @@ export async function GET() {
   let accountChecks: AccountCheck[] = [];
   let listError: string | undefined;
   if (Array.isArray(accounts)) {
-    accountChecks = await Promise.all(
-      (accounts as Array<{ id: string; name: string }>).map((a) => probeAccount(a.id, a.name))
+    // Concurrency cap of 4 keeps simultaneous Meta calls ≤16 (4 ops × 4 accts)
+    // and avoids 'User request limit reached' on big account lists.
+    accountChecks = await withConcurrency(
+      accounts as Array<{ id: string; name: string }>,
+      4,
+      (a) => probeAccount(a.id, a.name)
     );
   } else if ((accounts as { error?: string }).error) {
     listError = (accounts as { error: string }).error;
   }
+
+  const rateLimited = accountChecks.filter((c) =>
+    Object.values(c.ops || {}).some((op) => !op.ok && /request limit reached/i.test(op.error_message || ''))
+  ).length;
 
   const summary = {
     total: accountChecks.length,
     ok: accountChecks.filter((c) => c.ok).length,
     failing: accountChecks.filter((c) => !c.ok).length,
     permission_errors: accountChecks.filter((c) => c.error_code === 200).length,
+    rate_limited: rateLimited,
   };
 
   return NextResponse.json({
