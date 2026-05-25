@@ -126,9 +126,34 @@ export async function getAdSet(adsetId: string) {
 }
 
 export async function getCampaign(campaignId: string) {
-  const fields = 'id,name,status,effective_status,objective,daily_budget,lifetime_budget';
+  const fields = [
+    'id', 'name', 'status', 'effective_status', 'objective',
+    'daily_budget', 'lifetime_budget', 'budget_remaining', 'spend_cap',
+    'buying_type', 'bid_strategy', 'special_ad_categories',
+    'start_time', 'stop_time', 'created_time', 'updated_time',
+    'account_id', 'configured_status', 'source_campaign_id',
+  ].join(',');
   const r = await metaGet(`/${campaignId}`, { fields }, { paginate: false });
   return Array.isArray(r.data) ? r.data[0] : r;
+}
+
+export async function getCampaignAds(campaignId: string) {
+  // Slim fields to keep payload size safe (Graph 500 risk on deep nesting).
+  const fields = [
+    'id', 'name', 'adset_id', 'effective_status', 'status', 'created_time',
+    'creative{id,thumbnail_url,image_url,video_id}',
+  ].join(',');
+  const r = await metaGet(`/${campaignId}/ads`, { fields, limit: 100 });
+  return r.data;
+}
+
+export async function getCampaignAdSets(campaignId: string) {
+  const fields = [
+    'id', 'name', 'status', 'effective_status', 'daily_budget', 'lifetime_budget',
+    'billing_event', 'optimization_goal', 'start_time', 'end_time', 'targeting',
+  ].join(',');
+  const r = await metaGet(`/${campaignId}/adsets`, { fields, limit: 100 });
+  return r.data;
 }
 
 /* ---------- Mutation helpers ---------- */

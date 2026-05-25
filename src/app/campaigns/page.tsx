@@ -171,9 +171,12 @@ export default function CampaignsPage() {
                     const daily = c.daily_budget ? Number(c.daily_budget) / 100 : null;
                     const lifetime = c.lifetime_budget ? Number(c.lifetime_budget) / 100 : null;
                     return (
-                      <tr key={c.id} className="border-t border-[var(--hairline)] hover:bg-[var(--surface)]">
+                      <tr key={c.id} className="border-t border-[var(--hairline)] hover:bg-[var(--surface)] cursor-pointer" onClick={(e) => {
+                        if ((e.target as HTMLElement).closest('button')) return;
+                        window.location.href = `/campaigns/${c.id}`;
+                      }}>
                         <td className="px-4 py-2">
-                          <div className="font-medium text-[var(--fg)]">{c.name}</div>
+                          <Link href={`/campaigns/${c.id}`} className="font-medium text-[var(--fg)] hover:text-[var(--accent)] transition-colors">{c.name}</Link>
                           <div className="text-[11px] text-[var(--fg-faint)] font-mono">{c.id}</div>
                         </td>
                         <td className="px-4 py-2">
