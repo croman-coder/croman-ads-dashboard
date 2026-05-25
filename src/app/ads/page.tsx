@@ -114,21 +114,24 @@ export default function AdsPage() {
     load();
   }, [load]);
 
+  // "Activo" = realmente entregando impresiones → effective_status==='ACTIVE'.
+  // status==='ACTIVE' por sí solo NO basta (parent adset/campaign puede estar pausado o expirado).
   const filtered = useMemo(() => {
     const f = filter.toLowerCase();
     return rows.filter((a) => {
-      if (statusFilter === 'ACTIVE' && a.status !== 'ACTIVE') return false;
-      if (statusFilter === 'PAUSED' && a.status !== 'PAUSED') return false;
+      if (statusFilter === 'ACTIVE' && a.effective_status !== 'ACTIVE') return false;
+      if (statusFilter === 'PAUSED' && a.effective_status === 'ACTIVE') return false;
       if (!f) return true;
       return a.name.toLowerCase().includes(f) || a.id.includes(f);
     });
   }, [rows, filter, statusFilter]);
 
+  // Counts based on effective_status — what Meta is actually serving right now.
   const counts = useMemo(
     () => ({
       total: rows.length,
-      active: rows.filter((r) => r.status === 'ACTIVE').length,
-      paused: rows.filter((r) => r.status === 'PAUSED').length,
+      active: rows.filter((r) => r.effective_status === 'ACTIVE').length,
+      paused: rows.filter((r) => r.effective_status !== 'ACTIVE').length,
     }),
     [rows]
   );
@@ -235,8 +238,8 @@ export default function AdsPage() {
                 <span className="flex items-center gap-1.5">
                   <span className="dot dot-success" /> {counts.active} activos
                 </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="dot dot-muted" /> {counts.paused} pausados
+                <span className="flex items-center gap-1.5" title="Pausados, vencidos, en revisión, rechazados o con padres pausados">
+                  <span className="dot dot-muted" /> {counts.paused} no entregando
                 </span>
                 <span className="text-[var(--fg-faint)]">·</span>
                 <span className="font-[family-name:var(--font-mono)]">{counts.total} totales</span>
@@ -256,7 +259,7 @@ export default function AdsPage() {
                         : 'text-[var(--fg-muted)] hover:text-[var(--fg-soft)]'
                     }`}
                   >
-                    {s === 'ALL' ? 'Todos' : s === 'ACTIVE' ? 'Activos' : 'Pausados'}
+                    {s === 'ALL' ? 'Todos' : s === 'ACTIVE' ? 'Entregando' : 'No entregando'}
                   </button>
                 ))}
               </div>

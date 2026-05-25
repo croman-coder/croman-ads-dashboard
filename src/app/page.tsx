@@ -303,7 +303,7 @@ export default function Dashboard() {
             <div className="px-6 py-4 border-b border-[var(--hairline)] flex items-center justify-between">
               <div>
                 <h2 className="display text-2xl text-[var(--fg)]">Campañas</h2>
-                <p className="text-[11px] text-[var(--fg-muted)] mt-0.5">{rows.length} activas · ordenado por inversión</p>
+                <p className="text-[11px] text-[var(--fg-muted)] mt-0.5">{rows.length} con datos en rango · ordenado por inversión</p>
               </div>
               {loading && <span className="text-xs text-[var(--fg-muted)] flex items-center gap-2"><span className="dot dot-warning animate-pulse" /> Cargando…</span>}
             </div>
