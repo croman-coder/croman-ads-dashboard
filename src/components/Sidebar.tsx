@@ -89,6 +89,15 @@ export function Sidebar() {
           </div>
         </Link>
         <div className="eyebrow mt-3">Croman Ads</div>
+        <Link href="/onboarding" className="mt-3 flex items-center gap-2.5 glass px-3 py-2 rounded-lg group/ob">
+          <div className="w-7 h-7 rounded-full border-2 border-[var(--accent)] flex items-center justify-center text-[9px] font-bold text-[var(--accent)]">
+            2/4
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-[9px] uppercase tracking-[0.14em] text-[var(--fg-muted)]">Primeros pasos</div>
+            <div className="text-[11px] text-[var(--fg)] font-medium truncate">Configura cuenta</div>
+          </div>
+        </Link>
       </div>
       <nav className="flex-1 px-2 py-4 overflow-y-auto">
         {SECTIONS.map((section, idx) => (

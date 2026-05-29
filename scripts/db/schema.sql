@@ -82,3 +82,20 @@ CREATE TABLE IF NOT EXISTS audit_log (
 );
 CREATE INDEX IF NOT EXISTS idx_audit_user_time ON audit_log(user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_audit_action_time ON audit_log(action, created_at DESC);
+
+/* ---------- Per-account business / brand profile ---------- */
+
+CREATE TABLE IF NOT EXISTS account_profiles (
+  account_id    TEXT PRIMARY KEY,
+  account_name  TEXT,
+  business_desc TEXT,
+  products      TEXT,
+  audience      TEXT,
+  tone          TEXT,
+  geo           TEXT,
+  pixel_id      TEXT,
+  capi_enabled  BOOLEAN NOT NULL DEFAULT false,
+  onboarding_step INT NOT NULL DEFAULT 1,
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_by    UUID REFERENCES users(id) ON DELETE SET NULL
+);
