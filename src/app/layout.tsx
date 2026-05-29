@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { FloatingAgent } from "@/components/FloatingAgent";
 
 export const metadata: Metadata = {
   title: "Croman Ads Dashboard",
@@ -13,7 +14,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" className="h-full">
-      <body className="min-h-full">{children}</body>
+      <body className="min-h-full">
+        {children}
+        <FloatingAgent />
+      </body>
     </html>
   );
 }

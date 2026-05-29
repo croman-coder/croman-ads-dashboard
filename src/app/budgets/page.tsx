@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { Sidebar } from '@/components/Sidebar';
 import { TopBar } from '@/components/TopBar';
 import { StatusBadge } from '@/components/StatusBadge';
@@ -26,6 +26,7 @@ export default function BudgetsPage() {
   const [error, setError] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState<string | null>(null);
+  const [onlyDelivering, setOnlyDelivering] = useState(true);
   const { toasts, push, dismiss } = useToasts();
 
   const load = useCallback(async () => {
@@ -53,6 +54,17 @@ export default function BudgetsPage() {
   }, [account]);
 
   useEffect(() => { load(); }, [load]);
+
+  // "Entregando" = effective_status ACTIVE only. Old paused/expired campaigns
+  // (e.g. Leads Mirage 2024) hidden by default — they are NOT delivering.
+  const visible = useMemo(
+    () => (onlyDelivering ? items.filter((x) => x.effective_status === 'ACTIVE') : items),
+    [items, onlyDelivering]
+  );
+  const deliveringCount = useMemo(
+    () => items.filter((x) => x.effective_status === 'ACTIVE').length,
+    [items]
+  );
 
   const BUDGET_CAP = 1000;
 
@@ -103,43 +115,57 @@ export default function BudgetsPage() {
       <Sidebar />
       <div className="flex-1 flex flex-col">
         <TopBar selected={account} onSelect={setAccount} />
-        <main className="flex-1 p-6 space-y-4">
-          <div className="flex items-center justify-between">
+        <main className="flex-1 px-8 py-8 max-w-[1500px] mx-auto w-full space-y-5">
+          <div className="flex items-end justify-between flex-wrap gap-4 fade-in">
             <div>
-              <h1 className="text-2xl font-bold text-[var(--fg)]">Presupuestos</h1>
-              <p className="text-sm text-[var(--fg-muted)]">Edición de budget daily/lifetime — campañas y ad sets</p>
+              <p className="eyebrow mb-1 flex items-center gap-1.5"><Wallet size={12} className="text-[var(--accent)]" /> Presupuestos</p>
+              <h1 className="display text-5xl">Budgets.</h1>
+              <p className="text-sm text-[var(--fg-muted)] mt-2">
+                <span className="text-[var(--success)]">{deliveringCount} entregando</span> · {items.length} con presupuesto
+              </p>
             </div>
-            <button onClick={load} disabled={loading} className="flex items-center gap-2 text-sm text-[var(--fg-soft)] hover:text-[var(--fg)]">
-              <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-              Recargar
-            </button>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-px bg-[var(--surface)] border border-[var(--border)] rounded-md p-0.5">
+                <button
+                  onClick={() => setOnlyDelivering(true)}
+                  className={`px-3 py-1.5 text-[11px] uppercase tracking-[0.1em] font-semibold rounded transition-colors ${onlyDelivering ? 'bg-[var(--bg-elevated-2)] text-[var(--fg)]' : 'text-[var(--fg-muted)] hover:text-[var(--fg-soft)]'}`}
+                >Entregando</button>
+                <button
+                  onClick={() => setOnlyDelivering(false)}
+                  className={`px-3 py-1.5 text-[11px] uppercase tracking-[0.1em] font-semibold rounded transition-colors ${!onlyDelivering ? 'bg-[var(--bg-elevated-2)] text-[var(--fg)]' : 'text-[var(--fg-muted)] hover:text-[var(--fg-soft)]'}`}
+                >Todos</button>
+              </div>
+              <button onClick={load} disabled={loading} className="btn-ghost px-3 py-1.5 flex items-center gap-1.5">
+                <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
+              </button>
+            </div>
           </div>
 
-          {error && <div className="bg-[var(--danger)]/10 border border-[var(--danger)]/30 text-[var(--danger)] px-4 py-3 rounded text-sm">{error}</div>}
+          {error && <div className="card border-[var(--danger)]/30 bg-[var(--danger)]/10 text-[var(--danger)] px-4 py-3 text-sm">{error}</div>}
 
-          <div className="bg-[oklch(0.78_0.155_80_/_0.1)] border border-[var(--warning)] rounded px-4 py-3 text-sm text-[var(--fg)]">
+          <div className="card border-[var(--warning)]/40 bg-[oklch(0.80_0.16_75_/_0.08)] px-4 py-3 text-sm text-[var(--fg)]">
             <strong className="text-[var(--warning)]">Atención:</strong> cambios de presupuesto son inmediatos y afectan gasto real. <strong>Tope máximo USD {BUDGET_CAP}</strong>. Revisar monto antes de guardar.
           </div>
 
-          <div className="bg-[var(--bg-elevated)] border border-[var(--border)] rounded overflow-hidden">
+          <div className="card overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead className="bg-[var(--surface)]">
-                  <tr className="text-xs uppercase tracking-wider text-[var(--fg-soft)]">
-                    <th className="px-4 py-2 text-left">Nivel</th>
-                    <th className="px-4 py-2 text-left">Nombre</th>
-                    <th className="px-4 py-2 text-left">Estado</th>
-                    <th className="px-4 py-2 text-left">Tipo</th>
-                    <th className="px-4 py-2 text-right">Actual</th>
-                    <th className="px-4 py-2 text-right">Nuevo</th>
-                    <th className="px-4 py-2 text-right">Acción</th>
+                <thead>
+                  <tr className="text-[10px] uppercase tracking-[0.14em] text-[var(--fg-muted)] font-semibold border-b border-[var(--hairline)]">
+                    <th className="px-5 py-3 text-left">Nivel</th>
+                    <th className="px-4 py-3 text-left">Nombre</th>
+                    <th className="px-4 py-3 text-left">Estado</th>
+                    <th className="px-4 py-3 text-left">Tipo</th>
+                    <th className="px-4 py-3 text-right">Actual</th>
+                    <th className="px-4 py-3 text-right">Nuevo</th>
+                    <th className="px-5 py-3 text-right">Acción</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {items.length === 0 && !loading && (
-                    <tr><td colSpan={7} className="px-4 py-8 text-center text-[var(--fg-faint)]">Sin elementos con presupuesto</td></tr>
+                  {visible.length === 0 && !loading && (
+                    <tr><td colSpan={7} className="px-4 py-12 text-center text-[var(--fg-muted)]">{onlyDelivering ? 'Ninguna campaña/ad set entregando con presupuesto' : 'Sin elementos con presupuesto'}</td></tr>
                   )}
-                  {items.map((it) => {
+                  {visible.map((it) => {
                     const daily = it.daily_budget ? Number(it.daily_budget) / 100 : null;
                     const lifetime = it.lifetime_budget ? Number(it.lifetime_budget) / 100 : null;
                     const current = daily ?? lifetime ?? 0;

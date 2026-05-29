@@ -16,6 +16,7 @@ import {
   FolderOpen,
   Brain,
   Radio,
+  Plug,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -57,6 +58,7 @@ const SECTIONS: NavSection[] = [
     label: 'Tracking',
     items: [
       { href: '/pixel', label: 'Pixel & CAPI', icon: Radio },
+      { href: '/integrations', label: 'Integraciones', icon: Plug },
     ],
   },
   {
