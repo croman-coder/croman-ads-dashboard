@@ -14,6 +14,8 @@ import {
   ShieldCheck,
   Sparkles,
   FolderOpen,
+  Brain,
+  Radio,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -36,6 +38,7 @@ const SECTIONS: NavSection[] = [
     items: [
       { href: '/', label: 'Dashboard', icon: LayoutDashboard },
       { href: '/analytics', label: 'Analítica', icon: BarChart3 },
+      { href: '/audience/intelligence', label: 'Intelligence', icon: Brain },
       { href: '/alerts', label: 'Alertas', icon: Bell, showBadge: true },
     ],
   },
@@ -48,6 +51,12 @@ const SECTIONS: NavSection[] = [
       { href: '/library', label: 'Biblioteca', icon: FolderOpen },
       { href: '/audience', label: 'Audiencia', icon: Users },
       { href: '/budgets', label: 'Presupuestos', icon: Wallet },
+    ],
+  },
+  {
+    label: 'Tracking',
+    items: [
+      { href: '/pixel', label: 'Pixel & CAPI', icon: Radio },
     ],
   },
   {

@@ -426,3 +426,97 @@ export async function getCurrentBudget(objectId: string): Promise<{ amount: numb
   if (row?.lifetime_budget) return { amount: Number(row.lifetime_budget) / 100, type: 'lifetime' };
   return null;
 }
+
+/* ---------- Pixel + Conversions API (Phase A) ---------- */
+
+export type Pixel = {
+  id: string;
+  name: string;
+  last_fired_time?: string;
+  is_unavailable?: boolean;
+};
+
+export async function getPixels(accountId: string): Promise<Pixel[]> {
+  const id = accountId.startsWith('act_') ? accountId : `act_${accountId}`;
+  const r = await metaGet(`/${id}/adspixels`, {
+    fields: 'id,name,last_fired_time,is_unavailable',
+    limit: 50,
+  });
+  return (r.data || []) as Pixel[];
+}
+
+export type PixelStat = { event: string; count: number };
+
+/**
+ * Pixel event stats last 7d. Uses the pixel `stats` edge aggregated by event.
+ * Returns counts per standard event + whether server (CAPI) events present.
+ */
+export async function getPixelStats(pixelId: string): Promise<{
+  events: PixelStat[];
+  total: number;
+  has_server_events: boolean;
+  last_fired_time?: string;
+}> {
+  // aggregation=event_total_counts gives per-event counts over the window
+  const r = await metaGet(`/${pixelId}/stats`, {
+    aggregation: 'event',
+    start_time: Math.floor(Date.now() / 1000 - 7 * 86400),
+  }, { paginate: false }).catch(() => ({ data: [] }));
+  const rows = (Array.isArray((r as { data?: unknown[] }).data) ? (r as { data: Record<string, unknown>[] }).data : []) as Record<string, unknown>[];
+  const counts: Record<string, number> = {};
+  for (const row of rows) {
+    const data = (row.data || []) as Array<{ value?: string; count?: number }>;
+    for (const d of data) {
+      const ev = d.value || 'unknown';
+      counts[ev] = (counts[ev] || 0) + (d.count || 0);
+    }
+  }
+  const events = Object.entries(counts).map(([event, count]) => ({ event, count }));
+  const total = events.reduce((s, e) => s + e.count, 0);
+  return { events, total, has_server_events: false };
+}
+
+/** Lightweight CAPI status probe: reads pixel server-event flags. */
+export async function getCapiStatus(pixelId: string): Promise<{
+  configured: boolean;
+  last_fired_time?: string;
+}> {
+  const r = await metaGet(`/${pixelId}`, {
+    fields: 'id,name,last_fired_time,server_events_business_ids',
+  }, { paginate: false }).catch(() => null);
+  const row = (r && (Array.isArray((r as { data?: unknown }).data) ? (r as { data: unknown[] }).data[0] : r)) as Record<string, unknown> | null;
+  const serverBiz = row?.server_events_business_ids as unknown[] | undefined;
+  return {
+    configured: Array.isArray(serverBiz) && serverBiz.length > 0,
+    last_fired_time: row?.last_fired_time as string | undefined,
+  };
+}
+
+/**
+ * Send a Conversions API event. PII (email/phone) MUST already be SHA256-hashed
+ * by the caller. This fn never hashes or logs raw PII.
+ */
+export async function sendCapiEvent(pixelId: string, event: {
+  event_name: string;
+  event_time: number;
+  event_id?: string;
+  action_source?: string;
+  user_data: Record<string, string[] | string>;
+  custom_data?: Record<string, unknown>;
+}): Promise<{ events_received: number; fbtrace_id?: string }> {
+  const payload = {
+    data: [{
+      event_name: event.event_name,
+      event_time: event.event_time,
+      event_id: event.event_id,
+      action_source: event.action_source || 'system_generated',
+      user_data: event.user_data,
+      custom_data: event.custom_data,
+    }],
+  };
+  const r = await metaPost(`/${pixelId}/events`, { data: JSON.stringify(payload.data) }) as {
+    events_received?: number;
+    fbtrace_id?: string;
+  };
+  return { events_received: r.events_received || 0, fbtrace_id: r.fbtrace_id };
+}

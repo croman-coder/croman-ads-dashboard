@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Calendar, ChevronDown, GitCompare, Check } from 'lucide-react';
 
 const PRESETS = [
@@ -66,15 +67,48 @@ export function DateRangePicker({ value, onChange, comparison, onComparisonChang
   const [comparePreset, setComparePreset] = useState<Comparison['mode']>(comparison?.mode || 'prev_period');
   const [compareSince, setCompareSince] = useState(comparison?.since || '');
   const [compareUntil, setCompareUntil] = useState(comparison?.until || '');
-  const ref = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const [coords, setCoords] = useState<{ top: number; left: number; width: number } | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => { setMounted(true); }, []);
+
+  // Compute fixed coords anchored to button right edge.
+  useLayoutEffect(() => {
+    if (!open || !buttonRef.current) return;
+    const update = () => {
+      const r = buttonRef.current!.getBoundingClientRect();
+      const panelW = 440;
+      const margin = 8;
+      const left = Math.max(margin, Math.min(window.innerWidth - panelW - margin, r.right - panelW));
+      setCoords({ top: r.bottom + 8, left, width: Math.min(panelW, window.innerWidth - margin * 2) });
+    };
+    update();
+    window.addEventListener('resize', update);
+    window.addEventListener('scroll', update, true);
+    return () => {
+      window.removeEventListener('resize', update);
+      window.removeEventListener('scroll', update, true);
+    };
+  }, [open]);
 
   useEffect(() => {
+    if (!open) return;
     function close(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      const t = e.target as Node;
+      if (buttonRef.current?.contains(t)) return;
+      if (panelRef.current?.contains(t)) return;
+      setOpen(false);
     }
+    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') setOpen(false); }
     document.addEventListener('mousedown', close);
-    return () => document.removeEventListener('mousedown', close);
-  }, []);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', close);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
 
   function pickPreset(v: string) {
     setPreset(v);
@@ -98,10 +132,7 @@ export function DateRangePicker({ value, onChange, comparison, onComparisonChang
 
   function autoComputeCompare(base: DateRange, mode: Comparison['mode']) {
     if (!onComparisonChange) return;
-    if (mode === 'none') {
-      onComparisonChange({ mode: 'none' });
-      return;
-    }
+    if (mode === 'none') { onComparisonChange({ mode: 'none' }); return; }
     if (mode === 'prev_period') {
       const days = dayDiff(base.since, base.until);
       const prevUntilD = new Date(base.since); prevUntilD.setDate(prevUntilD.getDate() - 1);
@@ -135,9 +166,109 @@ export function DateRangePicker({ value, onChange, comparison, onComparisonChang
       ? value.since && value.until ? `${value.since} → ${value.until}` : 'Personalizado'
       : PRESETS.find((p) => p.value === preset)?.label || 'Rango';
 
+  const panel = open && coords ? (
+    <>
+      {/* Backdrop catches outside clicks on mobile + dims content slightly */}
+      <div className="fixed inset-0 z-[998]" style={{ background: 'rgba(10,10,12,0.04)' }} aria-hidden onClick={() => setOpen(false)} />
+      <div
+        ref={panelRef}
+        style={{
+          position: 'fixed',
+          top: coords.top,
+          left: coords.left,
+          width: coords.width,
+          maxHeight: `calc(100vh - ${coords.top + 16}px)`,
+          background: '#ffffff',
+          border: '1px solid #d4d4ce',
+          borderRadius: 10,
+          boxShadow: '0 20px 60px rgba(10,10,12,0.22), 0 6px 16px rgba(10,10,12,0.10)',
+          padding: 20,
+          zIndex: 999,
+          overflowY: 'auto',
+        }}
+      >
+        <div className="grid grid-cols-2 gap-5">
+          {/* Primary range */}
+          <div>
+            <div className="eyebrow mb-2 flex items-center gap-1.5"><Calendar size={11} /> Período</div>
+            <div className="space-y-px">
+              {PRESETS.map((p) => (
+                <button
+                  key={p.value}
+                  onClick={() => pickPreset(p.value)}
+                  className={`w-full text-left px-2 py-1.5 rounded text-[12.5px] flex items-center justify-between transition-colors ${
+                    preset === p.value
+                      ? 'bg-[var(--accent-soft)] text-[var(--accent)] font-medium'
+                      : 'text-[var(--fg-soft)] hover:bg-[var(--surface)]'
+                  }`}
+                >
+                  {p.label}
+                  {preset === p.value && <Check size={12} />}
+                </button>
+              ))}
+            </div>
+            {preset === 'custom' && (
+              <div className="mt-3 space-y-2 pt-3 border-t border-[var(--hairline)]">
+                <input type="date" value={customSince} onChange={(e) => setCustomSince(e.target.value)} className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded px-2 py-1.5 text-[12px] text-[var(--fg)] focus:outline-none focus:border-[var(--accent)]" />
+                <input type="date" value={customUntil} onChange={(e) => setCustomUntil(e.target.value)} className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded px-2 py-1.5 text-[12px] text-[var(--fg)] focus:outline-none focus:border-[var(--accent)]" />
+                <button onClick={applyCustom} disabled={!customSince || !customUntil || customSince > customUntil} className="btn-primary w-full py-1.5 text-[12px]">Aplicar</button>
+              </div>
+            )}
+          </div>
+
+          {/* Comparison */}
+          {onComparisonChange && (
+            <div>
+              <div className="eyebrow mb-2 flex items-center gap-1.5"><GitCompare size={11} /> Comparar con</div>
+              <div className="space-y-px">
+                {COMPARE_PRESETS.map((p) => (
+                  <button
+                    key={p.value}
+                    onClick={() => pickCompare(p.value)}
+                    className={`w-full text-left px-2 py-1.5 rounded text-[12.5px] flex items-center justify-between transition-colors ${
+                      comparePreset === p.value
+                        ? 'bg-[var(--accent-soft)] text-[var(--accent)] font-medium'
+                        : 'text-[var(--fg-soft)] hover:bg-[var(--surface)]'
+                    }`}
+                  >
+                    {p.label}
+                    {comparePreset === p.value && <Check size={12} />}
+                  </button>
+                ))}
+              </div>
+              {comparePreset === 'custom' && (
+                <div className="mt-3 space-y-2 pt-3 border-t border-[var(--hairline)]">
+                  <input type="date" value={compareSince} onChange={(e) => setCompareSince(e.target.value)} className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded px-2 py-1.5 text-[12px] text-[var(--fg)] focus:outline-none focus:border-[var(--accent)]" />
+                  <input type="date" value={compareUntil} onChange={(e) => setCompareUntil(e.target.value)} className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded px-2 py-1.5 text-[12px] text-[var(--fg)] focus:outline-none focus:border-[var(--accent)]" />
+                  <button
+                    onClick={() => onComparisonChange({ mode: 'custom', since: compareSince, until: compareUntil })}
+                    disabled={!compareSince || !compareUntil || compareSince > compareUntil}
+                    className="btn-primary w-full py-1.5 text-[12px]"
+                  >Aplicar</button>
+                </div>
+              )}
+              {comparison && comparison.mode !== 'none' && comparison.since && comparison.until && (
+                <div className="mt-3 pt-3 border-t border-[var(--hairline)] text-[11px] text-[var(--fg-muted)] font-[family-name:var(--font-mono)]">
+                  {comparison.since} → {comparison.until}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {value.since && value.until && (
+          <div className="mt-4 pt-3 border-t border-[var(--hairline)] text-[11px] text-[var(--fg-muted)] font-[family-name:var(--font-mono)]">
+            Actual: {value.since} → {value.until} · {dayDiff(value.since, value.until)} días
+          </div>
+        )}
+      </div>
+    </>
+  ) : null;
+
   return (
-    <div ref={ref} className="relative">
+    <>
       <button
+        ref={buttonRef}
         onClick={() => setOpen((v) => !v)}
         className="flex items-center gap-2 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-md text-sm text-[var(--fg)] pl-3 pr-2.5 py-1.5 cursor-pointer hover:border-[var(--border-strong)] focus:outline-none focus:border-[var(--accent)] transition-colors shadow-sm"
       >
@@ -150,88 +281,7 @@ export function DateRangePicker({ value, onChange, comparison, onComparisonChang
         )}
         <ChevronDown size={13} className="text-[var(--fg-muted)]" />
       </button>
-
-      {open && (
-        <div
-          className="absolute right-0 top-full mt-2 w-[440px] max-w-[calc(100vw-2rem)] bg-[var(--bg-elevated)] border border-[var(--border)] rounded-lg z-50 overflow-hidden p-5 fade-in"
-          style={{ boxShadow: '0 16px 48px rgba(10, 10, 12, 0.18), 0 4px 12px rgba(10, 10, 12, 0.08)' }}
-        >
-          <div className="grid grid-cols-2 gap-5">
-            {/* Primary range */}
-            <div>
-              <div className="eyebrow mb-2 flex items-center gap-1.5"><Calendar size={11} /> Período</div>
-              <div className="space-y-px">
-                {PRESETS.map((p) => (
-                  <button
-                    key={p.value}
-                    onClick={() => pickPreset(p.value)}
-                    className={`w-full text-left px-2 py-1.5 rounded text-[12.5px] flex items-center justify-between transition-colors ${
-                      preset === p.value
-                        ? 'bg-[var(--accent-soft)] text-[var(--accent)] font-medium'
-                        : 'text-[var(--fg-soft)] hover:bg-[var(--surface)]'
-                    }`}
-                  >
-                    {p.label}
-                    {preset === p.value && <Check size={12} />}
-                  </button>
-                ))}
-              </div>
-              {preset === 'custom' && (
-                <div className="mt-3 space-y-2 pt-3 border-t border-[var(--hairline)]">
-                  <input type="date" value={customSince} onChange={(e) => setCustomSince(e.target.value)} className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded px-2 py-1.5 text-[12px] text-[var(--fg)] focus:outline-none focus:border-[var(--accent)]" />
-                  <input type="date" value={customUntil} onChange={(e) => setCustomUntil(e.target.value)} className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded px-2 py-1.5 text-[12px] text-[var(--fg)] focus:outline-none focus:border-[var(--accent)]" />
-                  <button onClick={applyCustom} disabled={!customSince || !customUntil || customSince > customUntil} className="btn-primary w-full py-1.5 text-[12px]">Aplicar</button>
-                </div>
-              )}
-            </div>
-
-            {/* Comparison */}
-            {onComparisonChange && (
-              <div>
-                <div className="eyebrow mb-2 flex items-center gap-1.5"><GitCompare size={11} /> Comparar con</div>
-                <div className="space-y-px">
-                  {COMPARE_PRESETS.map((p) => (
-                    <button
-                      key={p.value}
-                      onClick={() => pickCompare(p.value)}
-                      className={`w-full text-left px-2 py-1.5 rounded text-[12.5px] flex items-center justify-between transition-colors ${
-                        comparePreset === p.value
-                          ? 'bg-[var(--accent-soft)] text-[var(--accent)] font-medium'
-                          : 'text-[var(--fg-soft)] hover:bg-[var(--surface)]'
-                      }`}
-                    >
-                      {p.label}
-                      {comparePreset === p.value && <Check size={12} />}
-                    </button>
-                  ))}
-                </div>
-                {comparePreset === 'custom' && (
-                  <div className="mt-3 space-y-2 pt-3 border-t border-[var(--hairline)]">
-                    <input type="date" value={compareSince} onChange={(e) => setCompareSince(e.target.value)} className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded px-2 py-1.5 text-[12px] text-[var(--fg)] focus:outline-none focus:border-[var(--accent)]" />
-                    <input type="date" value={compareUntil} onChange={(e) => setCompareUntil(e.target.value)} className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded px-2 py-1.5 text-[12px] text-[var(--fg)] focus:outline-none focus:border-[var(--accent)]" />
-                    <button
-                      onClick={() => onComparisonChange({ mode: 'custom', since: compareSince, until: compareUntil })}
-                      disabled={!compareSince || !compareUntil || compareSince > compareUntil}
-                      className="btn-primary w-full py-1.5 text-[12px]"
-                    >Aplicar</button>
-                  </div>
-                )}
-                {comparison && comparison.mode !== 'none' && comparison.since && comparison.until && (
-                  <div className="mt-3 pt-3 border-t border-[var(--hairline)] text-[11px] text-[var(--fg-muted)] font-[family-name:var(--font-mono)]">
-                    {comparison.since} → {comparison.until}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          {value.since && value.until && (
-            <div className="mt-4 pt-3 border-t border-[var(--hairline)] text-[11px] text-[var(--fg-muted)] font-[family-name:var(--font-mono)]">
-              Actual: {value.since} → {value.until} · {dayDiff(value.since, value.until)} días
-            </div>
-          )}
-        </div>
-      )}
-    </div>
+      {mounted && panel && createPortal(panel, document.body)}
+    </>
   );
 }

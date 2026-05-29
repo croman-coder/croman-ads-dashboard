@@ -2,52 +2,51 @@
 @import "tailwindcss";
 
 /*
-  Croman Ads v3 — Vivid light, brutal modern editorial
-  Reset from v2 noir → warm paper canvas with electric indigo +
-  multi-hue chart palette. Fraunces variable serif for display
-  with optical-sizing, Geist for UI, Geist Mono for data.
+  Croman Ads v4 — Dark performance console (saleads-inspired)
+  Deep noir canvas, electric indigo→violet accent, neon data palette.
+  Geist UI, Geist Mono data, Fraunces variable serif display.
 */
 
 :root {
-  /* Neutrals — warm paper, off-white */
-  --bg-deep: #fafaf6;            /* base canvas, warm paper */
-  --bg-base: #ffffff;
-  --bg-elevated: #ffffff;
-  --bg-elevated-2: #f4f4f0;
-  --surface: rgba(10, 10, 12, 0.025);
-  --surface-2: rgba(10, 10, 12, 0.05);
+  /* Neutrals — deep noir */
+  --bg-deep: #08080c;            /* base canvas */
+  --bg-base: #0c0c12;            /* app shell */
+  --bg-elevated: #14141c;        /* cards */
+  --bg-elevated-2: #1c1c26;      /* raised inputs / hover */
+  --surface: rgba(255, 255, 255, 0.03);
+  --surface-2: rgba(255, 255, 255, 0.06);
 
-  --fg: #0a0a0c;
-  --fg-soft: #3a3a44;
-  --fg-muted: #6a6a74;
-  --fg-faint: #aaaab2;
+  --fg: #f4f4f8;
+  --fg-soft: #c2c2cf;
+  --fg-muted: #82828f;
+  --fg-faint: #50505c;
 
-  --border: #e6e6e0;
-  --border-strong: #d4d4ce;
-  --hairline: #ededeb;
+  --border: #24242e;
+  --border-strong: #34343f;
+  --hairline: #1c1c26;
 
-  /* PRIMARY — vivid electric indigo */
-  --accent: oklch(0.52 0.22 278);
-  --accent-soft: oklch(0.52 0.22 278 / 0.10);
-  --accent-strong: oklch(0.46 0.24 278);
+  /* PRIMARY — electric indigo → violet */
+  --accent: oklch(0.62 0.22 278);
+  --accent-soft: oklch(0.62 0.22 278 / 0.16);
+  --accent-strong: oklch(0.70 0.23 278);
   --accent-fg: #ffffff;
 
-  /* Multi-hue data palette for charts */
-  --data-1: oklch(0.52 0.22 278);   /* indigo */
-  --data-2: oklch(0.72 0.18 200);   /* cyan */
-  --data-3: oklch(0.78 0.18 130);   /* lime */
-  --data-4: oklch(0.72 0.22 30);    /* coral */
-  --data-5: oklch(0.62 0.26 330);   /* fuchsia */
-  --data-6: oklch(0.78 0.16 75);    /* amber */
+  /* Neon data palette for charts on dark */
+  --data-1: oklch(0.68 0.21 278);   /* indigo */
+  --data-2: oklch(0.78 0.16 200);   /* cyan */
+  --data-3: oklch(0.82 0.20 135);   /* lime */
+  --data-4: oklch(0.74 0.21 30);    /* coral */
+  --data-5: oklch(0.70 0.26 330);   /* fuchsia */
+  --data-6: oklch(0.82 0.16 80);    /* amber */
 
-  /* Semantic */
-  --success: oklch(0.58 0.20 152);
-  --warning: oklch(0.70 0.18 70);
-  --danger: oklch(0.58 0.24 22);
-  --info: oklch(0.62 0.18 230);
+  /* Semantic — brighter for dark contrast */
+  --success: oklch(0.74 0.19 150);
+  --warning: oklch(0.80 0.16 75);
+  --danger: oklch(0.66 0.23 22);
+  --info: oklch(0.72 0.16 230);
 
-  --radius: 6px;
-  --radius-md: 10px;
+  --radius: 8px;
+  --radius-md: 12px;
   --radius-lg: 18px;
 
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
@@ -58,8 +57,8 @@
   --font-mono: 'Geist Mono', ui-monospace, monospace;
   --font-display: 'Fraunces', 'Georgia', serif;
 
-  --shadow-soft: 0 1px 2px rgba(10, 10, 12, 0.04), 0 4px 12px rgba(10, 10, 12, 0.04);
-  --shadow-pop:  0 2px 6px rgba(10, 10, 12, 0.06), 0 12px 32px rgba(10, 10, 12, 0.08);
+  --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 16px rgba(0, 0, 0, 0.3);
+  --shadow-pop:  0 2px 8px rgba(0, 0, 0, 0.5), 0 16px 48px rgba(0, 0, 0, 0.45);
   --shadow-ring: 0 0 0 4px var(--accent-soft);
 }
 
@@ -87,12 +86,12 @@ html, body {
   letter-spacing: -0.005em;
 }
 
-/* Aurora mesh background — subtle electric indigo + coral wash */
+/* Aurora glow background — indigo + violet on noir */
 body {
   background-image:
-    radial-gradient(ellipse 70% 50% at 10% 0%, oklch(0.52 0.22 278 / 0.10), transparent 60%),
-    radial-gradient(ellipse 60% 50% at 100% 20%, oklch(0.72 0.22 30 / 0.07), transparent 60%),
-    radial-gradient(ellipse 80% 60% at 50% 110%, oklch(0.72 0.18 200 / 0.06), transparent 65%);
+    radial-gradient(ellipse 60% 50% at 12% 0%, oklch(0.62 0.22 278 / 0.14), transparent 55%),
+    radial-gradient(ellipse 50% 45% at 100% 8%, oklch(0.70 0.26 330 / 0.10), transparent 55%),
+    radial-gradient(ellipse 70% 50% at 50% 110%, oklch(0.78 0.16 200 / 0.05), transparent 60%);
   background-attachment: fixed;
 }
 
