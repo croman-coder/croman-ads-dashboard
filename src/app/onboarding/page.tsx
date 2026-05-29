@@ -7,7 +7,7 @@ import { TopBar } from '@/components/TopBar';
 import { useAccount } from '@/lib/use-account';
 import { ToastStack } from '@/components/Toast';
 import { useToasts } from '@/lib/use-toasts';
-import { CheckCircle2, Clock, Lock, ArrowRight, Loader2, Plug, Building2, Sparkles } from 'lucide-react';
+import { CheckCircle2, Clock, Lock, ArrowRight, ArrowLeft, Loader2, Plug, Building2, Sparkles, Package, Briefcase, Boxes, ChevronRight } from 'lucide-react';
 
 type Profile = {
   account_id: string;
@@ -21,6 +21,12 @@ type Profile = {
 
 const TONES = ['Profesional', 'Cercano', 'Aspiracional', 'Urgente', 'Educativo'];
 
+const OFFERS = [
+  { id: 'productos', icon: Package, title: 'Productos', desc: 'Cosas que la gente compra: autos, repuestos, accesorios…' },
+  { id: 'servicios', icon: Briefcase, title: 'Servicios', desc: 'Cosas que la gente contrata: post-venta, financiación, seguros…' },
+  { id: 'ambos', icon: Boxes, title: 'Ambos', desc: 'Vendés productos y también ofrecés servicios.' },
+] as const;
+
 export default function OnboardingPage() {
   const router = useRouter();
   const { account, setAccount } = useAccount();
@@ -29,6 +35,8 @@ export default function OnboardingPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [wizStep, setWizStep] = useState(0); // 0 offer, 1 detalle, 2 público, 3 tono
+  const [offer, setOffer] = useState<string>('');
   const [form, setForm] = useState({ business_desc: '', products: '', audience: '', tone: 'Profesional', geo: 'Paraguay · Central + Asunción' });
 
   const load = useCallback(async () => {
@@ -125,47 +133,112 @@ export default function OnboardingPage() {
                     </div>
                     <p className="text-[13px] text-[var(--fg-muted)] mt-1">Contanos qué vende esta cuenta y a quién. La IA usa esto al generar pautas.</p>
                   </div>
-                  <button onClick={() => setEditing((v) => !v)} className={businessDone ? 'btn-glass px-4 py-2' : 'btn-gradient px-4 py-2'}>
+                  <button onClick={() => { setWizStep(0); setEditing((v) => !v); }} className={businessDone ? 'btn-glass px-4 py-2' : 'btn-gradient px-4 py-2'}>
                     {businessDone ? 'Editar' : 'Continuar'}
                   </button>
                 </div>
 
                 {editing && (
-                  <div className="mt-5 pt-5 border-t border-[var(--hairline)] space-y-4 fade-in">
-                    <Field label="¿Qué vende esta cuenta?">
-                      <textarea value={form.business_desc} onChange={(e) => setForm({ ...form, business_desc: e.target.value })} rows={2}
-                        placeholder="Ej: Concesionaria oficial Mitsubishi — SUVs, camionetas L200, financiación en USD"
-                        className="input resize-none" />
-                    </Field>
-                    <div className="grid grid-cols-2 gap-4">
-                      <Field label="Productos / modelos clave">
-                        <input value={form.products} onChange={(e) => setForm({ ...form, products: e.target.value })}
-                          placeholder="L200, Outlander, Eclipse Cross" className="input" />
-                      </Field>
-                      <Field label="Geo objetivo">
-                        <input value={form.geo} onChange={(e) => setForm({ ...form, geo: e.target.value })} className="input" />
-                      </Field>
+                  <div className="mt-5 pt-5 border-t border-[var(--hairline)] fade-in">
+                    {/* Wizard progress dots */}
+                    <div className="flex items-center gap-1.5 mb-6">
+                      {[0, 1, 2, 3].map((i) => (
+                        <div key={i} className={`h-1 flex-1 rounded-full transition-colors ${i <= wizStep ? 'bg-[var(--accent)]' : 'bg-[var(--border)]'}`} />
+                      ))}
                     </div>
-                    <Field label="Público objetivo">
-                      <input value={form.audience} onChange={(e) => setForm({ ...form, audience: e.target.value })}
-                        placeholder="Hombres 30-55, agro/comercio, interés 4x4 + financiación" className="input" />
-                    </Field>
-                    <Field label="Tono de comunicación">
-                      <div className="flex flex-wrap gap-1.5">
-                        {TONES.map((t) => (
-                          <button key={t} onClick={() => setForm({ ...form, tone: t })}
-                            className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${form.tone === t ? 'border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]' : 'border-[var(--border)] text-[var(--fg-soft)]'}`}>
-                            {t}
-                          </button>
-                        ))}
+
+                    {/* Step 0 — ¿Qué ofreces? */}
+                    {wizStep === 0 && (
+                      <div className="space-y-3 fade-in">
+                        <div className="text-center mb-5">
+                          <h3 className="display text-3xl">¿Qué ofreces?</h3>
+                          <p className="text-[13px] text-[var(--fg-muted)] mt-1">Elegí lo que vende esta cuenta para armar mejor las campañas.</p>
+                        </div>
+                        {OFFERS.map((o) => {
+                          const Icon = o.icon;
+                          const sel = offer === o.id;
+                          return (
+                            <button key={o.id} onClick={() => { setOffer(o.id); setWizStep(1); }}
+                              className={`w-full text-left flex items-center gap-4 p-4 rounded-xl border transition-all lift ${sel ? 'border-[var(--accent)] bg-[var(--accent-soft)]' : 'border-[var(--border)] hover:border-[var(--border-strong)]'}`}>
+                              <div className="w-11 h-11 rounded-lg glass flex items-center justify-center shrink-0">
+                                <Icon size={20} className="text-[var(--accent)]" />
+                              </div>
+                              <div className="flex-1">
+                                <div className="text-[15px] font-semibold text-[var(--fg)]">{o.title}</div>
+                                <div className="text-[12px] text-[var(--fg-muted)]">{o.desc}</div>
+                              </div>
+                              <ChevronRight size={16} className="text-[var(--fg-muted)]" />
+                            </button>
+                          );
+                        })}
                       </div>
-                    </Field>
-                    <div className="flex justify-end gap-2">
-                      <button onClick={() => setEditing(false)} className="btn-ghost px-4 py-2">Cancelar</button>
-                      <button onClick={saveBusiness} disabled={saving} className="btn-gradient px-4 py-2 flex items-center gap-2">
-                        {saving && <Loader2 size={14} className="animate-spin" />} Guardar negocio
-                      </button>
-                    </div>
+                    )}
+
+                    {/* Step 1 — Detalle */}
+                    {wizStep === 1 && (
+                      <div className="space-y-4 fade-in">
+                        <div className="text-center mb-4">
+                          <h3 className="display text-3xl">Contanos más.</h3>
+                          <p className="text-[13px] text-[var(--fg-muted)] mt-1">Describí el negocio y los productos/servicios clave.</p>
+                        </div>
+                        <Field label="¿Qué vende esta cuenta?">
+                          <textarea value={form.business_desc} onChange={(e) => setForm({ ...form, business_desc: e.target.value })} rows={2}
+                            placeholder="Ej: Concesionaria oficial Mitsubishi — SUVs, camionetas L200, financiación en USD"
+                            className="input resize-none" />
+                        </Field>
+                        <div className="grid grid-cols-2 gap-4">
+                          <Field label="Productos / modelos clave">
+                            <input value={form.products} onChange={(e) => setForm({ ...form, products: e.target.value })}
+                              placeholder="L200, Outlander, Eclipse Cross" className="input" />
+                          </Field>
+                          <Field label="Geo objetivo">
+                            <input value={form.geo} onChange={(e) => setForm({ ...form, geo: e.target.value })} className="input" />
+                          </Field>
+                        </div>
+                        <WizNav onBack={() => setWizStep(0)} onNext={() => setWizStep(2)} nextDisabled={!form.business_desc.trim()} />
+                      </div>
+                    )}
+
+                    {/* Step 2 — Público */}
+                    {wizStep === 2 && (
+                      <div className="space-y-4 fade-in">
+                        <div className="text-center mb-4">
+                          <h3 className="display text-3xl">¿A quién le vendés?</h3>
+                          <p className="text-[13px] text-[var(--fg-muted)] mt-1">Definí el público objetivo. Intelligence lo refina con datos reales.</p>
+                        </div>
+                        <Field label="Público objetivo">
+                          <input value={form.audience} onChange={(e) => setForm({ ...form, audience: e.target.value })}
+                            placeholder="Hombres 30-55, agro/comercio, interés 4x4 + financiación" className="input" />
+                        </Field>
+                        <WizNav onBack={() => setWizStep(1)} onNext={() => setWizStep(3)} nextDisabled={!form.audience.trim()} />
+                      </div>
+                    )}
+
+                    {/* Step 3 — Tono + guardar */}
+                    {wizStep === 3 && (
+                      <div className="space-y-4 fade-in">
+                        <div className="text-center mb-4">
+                          <h3 className="display text-3xl">Tono de marca.</h3>
+                          <p className="text-[13px] text-[var(--fg-muted)] mt-1">¿Cómo le hablás a tu público?</p>
+                        </div>
+                        <Field label="Tono de comunicación">
+                          <div className="flex flex-wrap gap-1.5">
+                            {TONES.map((t) => (
+                              <button key={t} onClick={() => setForm({ ...form, tone: t })}
+                                className={`px-3.5 py-2 rounded-full text-[13px] border transition-colors ${form.tone === t ? 'border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]' : 'border-[var(--border)] text-[var(--fg-soft)]'}`}>
+                                {t}
+                              </button>
+                            ))}
+                          </div>
+                        </Field>
+                        <div className="flex justify-between gap-2 pt-2">
+                          <button onClick={() => setWizStep(2)} className="btn-ghost px-4 py-2 flex items-center gap-1.5"><ArrowLeft size={14} /> Atrás</button>
+                          <button onClick={saveBusiness} disabled={saving} className="btn-gradient px-5 py-2 flex items-center gap-2">
+                            {saving && <Loader2 size={14} className="animate-spin" />} Guardar negocio
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -224,5 +297,16 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       <div className="eyebrow mb-1.5">{label}</div>
       {children}
     </label>
+  );
+}
+
+function WizNav({ onBack, onNext, nextDisabled }: { onBack: () => void; onNext: () => void; nextDisabled?: boolean }) {
+  return (
+    <div className="flex justify-between gap-2 pt-2">
+      <button onClick={onBack} className="btn-ghost px-4 py-2 flex items-center gap-1.5"><ArrowLeft size={14} /> Atrás</button>
+      <button onClick={onNext} disabled={nextDisabled} className="btn-gradient px-5 py-2 flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed">
+        Siguiente <ArrowRight size={14} />
+      </button>
+    </div>
   );
 }
