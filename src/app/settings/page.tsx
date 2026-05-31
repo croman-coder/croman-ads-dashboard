@@ -36,8 +36,10 @@ type DbUser = {
   is_active: boolean;
   created_at: string;
   last_login_at: string | null;
+  bitrix_user_id: string | null;
 };
 type Account = { id: string; name: string; currency: string };
+type BitrixUser = { id: string; name: string; email?: string };
 type AccountGrant = { account_id: string; account_name: string | null };
 type Profile = {
   user_id: string;
@@ -73,6 +75,7 @@ export default function SettingsPage() {
 
   const [editUser, setEditUser] = useState<DbUser | null>(null);
   const [grantsUser, setGrantsUser] = useState<DbUser | null>(null);
+  const [bitrixUsers, setBitrixUsers] = useState<BitrixUser[]>([]);
   const [confirm, setConfirm] = useState<null | { title: string; msg: string; action: () => Promise<void>; destructive?: boolean }>(null);
 
   useEffect(() => {
@@ -105,8 +108,23 @@ export default function SettingsPage() {
   }, [profile, push]);
 
   useEffect(() => {
-    if (tab === 'users') loadUsers();
+    if (tab === 'users') {
+      loadUsers();
+      fetch('/api/admin/bitrix-users').then((r) => r.json()).then((j) => setBitrixUsers(j.users || [])).catch(() => {});
+    }
   }, [tab, loadUsers]);
+
+  async function mapBitrix(userId: string, bitrixId: string) {
+    try {
+      const r = await fetch(`/api/admin/users/${userId}/bitrix`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bitrix_user_id: bitrixId || null }),
+      });
+      if (!r.ok) throw new Error((await r.json()).error || 'Error');
+      push('Vendedor Bitrix asignado', 'success');
+      loadUsers();
+    } catch (e) { push(e instanceof Error ? e.message : 'Error', 'error'); }
+  }
 
   async function changePasswordFn(e: React.FormEvent) {
     e.preventDefault();
@@ -284,6 +302,7 @@ export default function SettingsPage() {
                     <tr className="text-[10px] uppercase tracking-[0.14em] text-[var(--fg-muted)] font-semibold border-b border-[var(--hairline)]">
                       <th className="px-6 py-3 text-left">Usuario</th>
                       <th className="px-4 py-3 text-left">Rol</th>
+                      <th className="px-4 py-3 text-left">Vendedor Bitrix</th>
                       <th className="px-4 py-3 text-left">Estado</th>
                       <th className="px-4 py-3 text-left">Último login</th>
                       <th className="px-6 py-3 text-right">Acciones</th>
@@ -297,6 +316,18 @@ export default function SettingsPage() {
                           <div className="text-[11px] text-[var(--fg-muted)]">{u.email}</div>
                         </td>
                         <td className="px-4 py-3"><RolePill role={u.role} /></td>
+                        <td className="px-4 py-3">
+                          <select
+                            value={u.bitrix_user_id || ''}
+                            onChange={(e) => mapBitrix(u.id, e.target.value)}
+                            className="bg-[var(--bg-elevated-2)] border border-[var(--border)] rounded px-2 py-1 text-[12px] text-[var(--fg)] max-w-[160px] focus:outline-none focus:border-[var(--accent)]"
+                          >
+                            <option value="">— sin asignar —</option>
+                            {bitrixUsers.map((bu) => (
+                              <option key={bu.id} value={bu.id}>{bu.name}</option>
+                            ))}
+                          </select>
+                        </td>
                         <td className="px-4 py-3">
                           {u.is_active ? (
                             <span className="inline-flex items-center gap-1.5 text-[11px] text-[var(--success)]"><CheckCircle2 size={12} /> Activo</span>

@@ -13,6 +13,7 @@ export type User = {
   updated_at: string;
   last_login_at: string | null;
   created_by: string | null;
+  bitrix_user_id: string | null;
 };
 
 const HASH_ROUNDS = 10;
@@ -28,7 +29,31 @@ function rowToUser(r: Record<string, unknown>): User {
     updated_at: (r.updated_at as Date).toISOString(),
     last_login_at: r.last_login_at ? (r.last_login_at as Date).toISOString() : null,
     created_by: (r.created_by as string) ?? null,
+    bitrix_user_id: (r.bitrix_user_id as string) ?? null,
   };
+}
+
+/** Set the Bitrix responsible user id for a dashboard user. */
+export async function setBitrixUserId(userId: string, bitrixUserId: string | null): Promise<void> {
+  await sql`UPDATE users SET bitrix_user_id = ${bitrixUserId}, updated_at = now() WHERE id = ${userId}`;
+}
+
+/**
+ * Resolve which Bitrix responsible to assign for an ad account's lead.
+ * Finds the (non-admin) user granted that account who has a bitrix_user_id.
+ */
+export async function resolveBitrixOwner(accountId: string): Promise<string | null> {
+  const r = await sql`
+    SELECT u.bitrix_user_id
+    FROM user_account_access ua
+    JOIN users u ON u.id = ua.user_id
+    WHERE (ua.account_id = ${accountId} OR ua.account_id = ${'act_' + accountId})
+      AND u.bitrix_user_id IS NOT NULL
+      AND u.is_active = true
+    ORDER BY (u.role = 'admin') ASC
+    LIMIT 1
+  `;
+  return (r.rows[0]?.bitrix_user_id as string) ?? null;
 }
 
 export async function hashPassword(plain: string): Promise<string> {
@@ -42,7 +67,7 @@ export async function verifyPassword(plain: string, hash: string): Promise<boole
 
 export async function findUserByEmail(email: string): Promise<(User & { password_hash: string }) | null> {
   const r = await sql`
-    SELECT id, email, password_hash, full_name, role, is_active, created_at, updated_at, last_login_at, created_by
+    SELECT id, email, password_hash, full_name, role, is_active, created_at, updated_at, last_login_at, created_by, bitrix_user_id
     FROM users
     WHERE lower(email) = lower(${email})
     LIMIT 1
@@ -54,7 +79,7 @@ export async function findUserByEmail(email: string): Promise<(User & { password
 
 export async function findUserById(id: string): Promise<User | null> {
   const r = await sql`
-    SELECT id, email, password_hash, full_name, role, is_active, created_at, updated_at, last_login_at, created_by
+    SELECT id, email, password_hash, full_name, role, is_active, created_at, updated_at, last_login_at, created_by, bitrix_user_id
     FROM users
     WHERE id = ${id}
     LIMIT 1
@@ -64,7 +89,7 @@ export async function findUserById(id: string): Promise<User | null> {
 
 export async function listUsers(): Promise<User[]> {
   const r = await sql`
-    SELECT id, email, password_hash, full_name, role, is_active, created_at, updated_at, last_login_at, created_by
+    SELECT id, email, password_hash, full_name, role, is_active, created_at, updated_at, last_login_at, created_by, bitrix_user_id
     FROM users
     ORDER BY created_at DESC
   `;
@@ -85,7 +110,7 @@ export async function createUser(params: {
   const r = await sql`
     INSERT INTO users (email, password_hash, full_name, role, created_by)
     VALUES (${params.email}, ${hash}, ${params.full_name ?? null}, ${role}, ${params.created_by ?? null})
-    RETURNING id, email, password_hash, full_name, role, is_active, created_at, updated_at, last_login_at, created_by
+    RETURNING id, email, password_hash, full_name, role, is_active, created_at, updated_at, last_login_at, created_by, bitrix_user_id
   `;
   return rowToUser(r.rows[0]);
 }

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getLeadgenLead, parseLeadFields } from '@/lib/meta-api';
 import { createBitrixLead, findBitrixLeadByExternal, isBitrixConfigured } from '@/lib/bitrix';
+import { resolveBitrixOwner } from '@/lib/user-store';
 
 export const dynamic = 'force-dynamic';
 
@@ -60,6 +61,7 @@ export async function POST(req: Request) {
       if (change.field !== 'leadgen') continue;
       const leadgenId = change.value?.leadgen_id;
       if (!leadgenId) continue;
+      const accountId = change.value?.page_id; // leadgen value carries page_id; account resolution best-effort
       try {
         // Dedup: skip if already in Bitrix (leadgen_id stored in comments)
         const dup = await findBitrixLeadByExternal(leadgenId);
@@ -69,6 +71,8 @@ export async function POST(req: Request) {
         }
         const lead = await getLeadgenLead(leadgenId);
         const parsed = parseLeadFields(lead);
+        // Resolve responsible Bitrix vendedor from the ad account owner mapping
+        const assigned = accountId ? await resolveBitrixOwner(accountId).catch(() => null) : null;
         await createBitrixLead({
           name: parsed.name,
           phone: parsed.phone,
@@ -76,8 +80,9 @@ export async function POST(req: Request) {
           source: lead.campaign_name || lead.form_name || 'Meta Lead Ad',
           comments: `Meta leadgen_id: ${leadgenId}\nForm: ${lead.form_name || '—'}\nCampaña: ${lead.campaign_name || '—'}`,
           utm_campaign: lead.campaign_name,
+          assigned_by_id: assigned || undefined,
         });
-        results.push({ leadgen_id: leadgenId, status: 'created' });
+        results.push({ leadgen_id: leadgenId, status: assigned ? `created (asignado ${assigned})` : 'created' });
       } catch (e) {
         results.push({ leadgen_id: leadgenId, status: `error: ${e instanceof Error ? e.message : 'unknown'}` });
       }

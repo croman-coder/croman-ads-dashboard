@@ -105,3 +105,6 @@ CREATE TABLE IF NOT EXISTS account_profiles (
   updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_by    UUID REFERENCES users(id) ON DELETE SET NULL
 );
+
+-- Map dashboard user → Bitrix responsible user (for lead assignment)
+ALTER TABLE users ADD COLUMN IF NOT EXISTS bitrix_user_id TEXT;
