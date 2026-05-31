@@ -625,3 +625,33 @@ export async function createLookalike(accountId: string, params: {
   }) as { id: string };
   return r;
 }
+
+/* ---------- Reach estimate + interest search (Phase E wizard) ---------- */
+
+export async function searchInterests(query: string): Promise<Array<{ id: string; name: string; audience_size?: number; path?: string[] }>> {
+  const r = await metaGet(`/search`, {
+    type: 'adinterest',
+    q: query,
+    limit: 20,
+  });
+  return (r.data || []) as Array<{ id: string; name: string; audience_size?: number; path?: string[] }>;
+}
+
+/** Delivery/reach estimate for a targeting spec. optimization_goal e.g. LEAD_GENERATION. */
+export async function getReachEstimate(accountId: string, params: {
+  targeting: Record<string, unknown>;
+  optimization_goal?: string;
+}): Promise<{ users_lower_bound?: number; users_upper_bound?: number; estimate_ready?: boolean }> {
+  const acct = accountId.startsWith('act_') ? accountId : `act_${accountId}`;
+  const r = await metaGet(`/${acct}/delivery_estimate`, {
+    optimization_goal: params.optimization_goal || 'REACH',
+    targeting_spec: JSON.stringify(params.targeting),
+  }, { paginate: false });
+  const row = (Array.isArray((r as { data?: unknown[] }).data) ? (r as { data: Record<string, unknown>[] }).data[0] : r) as Record<string, unknown>;
+  const est = (row?.estimate_dau || row) as Record<string, unknown>;
+  return {
+    users_lower_bound: Number(est?.users_lower_bound || row?.users_lower_bound || 0) || undefined,
+    users_upper_bound: Number(est?.users_upper_bound || row?.users_upper_bound || 0) || undefined,
+    estimate_ready: !!(row?.estimate_ready ?? true),
+  };
+}
