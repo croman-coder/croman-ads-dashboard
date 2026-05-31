@@ -195,3 +195,38 @@ export async function audit(params: {
     )
   `;
 }
+
+/* ---------- Page → Bitrix vendedor routing ---------- */
+
+export type PageRoute = { page_id: string; page_name: string | null; bitrix_user_id: string };
+
+export async function listPageRoutes(): Promise<PageRoute[]> {
+  const r = await sql`SELECT page_id, page_name, bitrix_user_id FROM page_lead_routing ORDER BY page_name NULLS LAST`;
+  return r.rows.map((x) => ({
+    page_id: x.page_id as string,
+    page_name: (x.page_name as string) ?? null,
+    bitrix_user_id: x.bitrix_user_id as string,
+  }));
+}
+
+export async function setPageRoute(pageId: string, pageName: string | null, bitrixUserId: string, by: string | null): Promise<void> {
+  await sql`
+    INSERT INTO page_lead_routing (page_id, page_name, bitrix_user_id, updated_by, updated_at)
+    VALUES (${pageId}, ${pageName}, ${bitrixUserId}, ${by}, now())
+    ON CONFLICT (page_id) DO UPDATE SET
+      page_name = EXCLUDED.page_name,
+      bitrix_user_id = EXCLUDED.bitrix_user_id,
+      updated_by = EXCLUDED.updated_by,
+      updated_at = now()
+  `;
+}
+
+export async function deletePageRoute(pageId: string): Promise<void> {
+  await sql`DELETE FROM page_lead_routing WHERE page_id = ${pageId}`;
+}
+
+/** Resolve Bitrix vendedor for a Facebook page (leadgen webhook). */
+export async function resolveBitrixByPage(pageId: string): Promise<string | null> {
+  const r = await sql`SELECT bitrix_user_id FROM page_lead_routing WHERE page_id = ${pageId} LIMIT 1`;
+  return (r.rows[0]?.bitrix_user_id as string) ?? null;
+}

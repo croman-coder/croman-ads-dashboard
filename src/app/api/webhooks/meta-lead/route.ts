@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getLeadgenLead, parseLeadFields } from '@/lib/meta-api';
 import { createBitrixLead, findBitrixLeadByExternal, isBitrixConfigured } from '@/lib/bitrix';
-import { resolveBitrixOwner } from '@/lib/user-store';
+import { resolveBitrixByPage, resolveBitrixOwner } from '@/lib/user-store';
 
 export const dynamic = 'force-dynamic';
 
@@ -61,7 +61,7 @@ export async function POST(req: Request) {
       if (change.field !== 'leadgen') continue;
       const leadgenId = change.value?.leadgen_id;
       if (!leadgenId) continue;
-      const accountId = change.value?.page_id; // leadgen value carries page_id; account resolution best-effort
+      const pageId = change.value?.page_id;
       try {
         // Dedup: skip if already in Bitrix (leadgen_id stored in comments)
         const dup = await findBitrixLeadByExternal(leadgenId);
@@ -71,8 +71,10 @@ export async function POST(req: Request) {
         }
         const lead = await getLeadgenLead(leadgenId);
         const parsed = parseLeadFields(lead);
-        // Resolve responsible Bitrix vendedor from the ad account owner mapping
-        const assigned = accountId ? await resolveBitrixOwner(accountId).catch(() => null) : null;
+        // Resolve responsible Bitrix vendedor: page routing first, then account-owner fallback
+        let assigned: string | null = null;
+        if (pageId) assigned = await resolveBitrixByPage(pageId).catch(() => null);
+        if (!assigned && pageId) assigned = await resolveBitrixOwner(pageId).catch(() => null);
         await createBitrixLead({
           name: parsed.name,
           phone: parsed.phone,

@@ -365,6 +365,8 @@ export default function SettingsPage() {
                   </tbody>
                 </table>
               </section>
+
+              <PageRouting account={account} bitrixUsers={bitrixUsers} push={push} />
             </div>
           )}
         </main>
@@ -636,6 +638,103 @@ function MetaDiagnostic({ push }: { push: (m: string, t: 'success' | 'error') =>
         </>
       )}
     </div>
+  );
+}
+
+type FbPage = { id: string; name: string };
+type RouteRow = { page_id: string; page_name: string | null; bitrix_user_id: string };
+
+function PageRouting({ account, bitrixUsers, push }: { account: string; bitrixUsers: BitrixUser[]; push: (m: string, t: 'success' | 'error') => void }) {
+  const [pages, setPages] = useState<FbPage[]>([]);
+  const [routes, setRoutes] = useState<RouteRow[]>([]);
+  const [pageId, setPageId] = useState('');
+  const [bxId, setBxId] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const loadRoutes = useCallback(() => {
+    fetch('/api/admin/page-routing').then((r) => r.json()).then((j) => setRoutes(j.routes || [])).catch(() => {});
+  }, []);
+  useEffect(() => { loadRoutes(); }, [loadRoutes]);
+  useEffect(() => {
+    if (!account) return;
+    fetch(`/api/pages?account_id=${account}`).then((r) => r.json()).then((j) => {
+      setPages(j.data || []); if (j.data?.[0]) setPageId(j.data[0].id);
+    }).catch(() => {});
+  }, [account]);
+
+  async function save() {
+    if (!pageId || !bxId) { push('Elegí página + vendedor', 'error'); return; }
+    setSaving(true);
+    try {
+      const page = pages.find((p) => p.id === pageId);
+      const r = await fetch('/api/admin/page-routing', {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ page_id: pageId, page_name: page?.name, bitrix_user_id: bxId }),
+      });
+      if (!r.ok) throw new Error((await r.json()).error || 'Error');
+      push('Ruteo guardado', 'success'); setBxId(''); loadRoutes();
+    } catch (e) { push(e instanceof Error ? e.message : 'Error', 'error'); }
+    finally { setSaving(false); }
+  }
+
+  async function del(pid: string) {
+    await fetch(`/api/admin/page-routing?page_id=${pid}`, { method: 'DELETE' });
+    push('Ruteo eliminado', 'success'); loadRoutes();
+  }
+
+  const bxName = (id: string) => bitrixUsers.find((b) => b.id === id)?.name || id;
+
+  return (
+    <section className="card p-6">
+      <h2 className="display text-2xl mb-1">Ruteo de leads por página</h2>
+      <p className="text-[12px] text-[var(--fg-muted)] mb-5">Lead form de cada página Facebook → asignado al vendedor Bitrix correcto automáticamente.</p>
+
+      <div className="flex items-end gap-2 flex-wrap mb-5">
+        <label className="flex-1 min-w-[180px]">
+          <div className="eyebrow mb-1.5">Página Facebook (cuenta activa)</div>
+          <select value={pageId} onChange={(e) => setPageId(e.target.value)} className="input">
+            {pages.length === 0 && <option>Sin páginas</option>}
+            {pages.map((p) => <option key={p.id} value={p.id}>{p.name} ({p.id})</option>)}
+          </select>
+        </label>
+        <label className="flex-1 min-w-[180px]">
+          <div className="eyebrow mb-1.5">Vendedor Bitrix</div>
+          <select value={bxId} onChange={(e) => setBxId(e.target.value)} className="input">
+            <option value="">— elegir —</option>
+            {bitrixUsers.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+          </select>
+        </label>
+        <button onClick={save} disabled={saving} className="btn-gradient px-4 py-2 flex items-center gap-2">
+          {saving && <Loader2 size={14} className="animate-spin" />} Asignar
+        </button>
+      </div>
+
+      {routes.length > 0 && (
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-[10px] uppercase tracking-[0.14em] text-[var(--fg-muted)] font-semibold border-b border-[var(--hairline)]">
+              <th className="px-3 py-2 text-left">Página</th>
+              <th className="px-3 py-2 text-left">Vendedor Bitrix</th>
+              <th className="px-3 py-2 text-right"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {routes.map((r) => (
+              <tr key={r.page_id} className="border-t border-[var(--hairline)]">
+                <td className="px-3 py-2">
+                  <div className="text-[var(--fg)]">{r.page_name || r.page_id}</div>
+                  <div className="text-[10px] font-[family-name:var(--font-mono)] text-[var(--fg-faint)]">{r.page_id}</div>
+                </td>
+                <td className="px-3 py-2 text-[var(--fg-soft)]">{bxName(r.bitrix_user_id)}</td>
+                <td className="px-3 py-2 text-right">
+                  <button onClick={() => del(r.page_id)} className="p-1.5 rounded hover:bg-[var(--surface-2)] text-[var(--danger)]"><Trash2 size={13} /></button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </section>
   );
 }
 

@@ -108,3 +108,12 @@ CREATE TABLE IF NOT EXISTS account_profiles (
 
 -- Map dashboard user → Bitrix responsible user (for lead assignment)
 ALTER TABLE users ADD COLUMN IF NOT EXISTS bitrix_user_id TEXT;
+
+-- Lead routing: Facebook page → Bitrix vendedor (asesor)
+CREATE TABLE IF NOT EXISTS page_lead_routing (
+  page_id        TEXT PRIMARY KEY,
+  page_name      TEXT,
+  bitrix_user_id TEXT NOT NULL,
+  updated_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_by     UUID REFERENCES users(id) ON DELETE SET NULL
+);

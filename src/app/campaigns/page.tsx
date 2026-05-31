@@ -21,6 +21,9 @@ type Campaign = {
   lifetime_budget?: string;
   start_time?: string;
   created_time?: string;
+  delivering?: boolean;        // status ACTIVE + recent spend/impressions
+  recent_spend?: number;
+  recent_impressions?: number;
 };
 
 type Ad = {
@@ -87,11 +90,13 @@ export default function CampaignsPage() {
     return map;
   }, [ads]);
 
+  // "Entregando" = backend `delivering` flag (status ACTIVE + recent spend/impr).
+  // Completed campaigns (budget/end-date) report ACTIVE but don't deliver → excluded.
   const filtered = useMemo(() => {
     const s = search.toLowerCase();
     return rows.filter((c) => {
-      if (statusFilter === 'ACTIVE' && c.effective_status !== 'ACTIVE') return false;
-      if (statusFilter === 'PAUSED' && c.effective_status === 'ACTIVE') return false;
+      if (statusFilter === 'ACTIVE' && !c.delivering) return false;
+      if (statusFilter === 'PAUSED' && c.delivering) return false;
       if (!s) return true;
       return c.name.toLowerCase().includes(s) || c.id.includes(s);
     });
@@ -100,8 +105,8 @@ export default function CampaignsPage() {
   const counts = useMemo(
     () => ({
       total: rows.length,
-      active: rows.filter((r) => r.effective_status === 'ACTIVE').length,
-      paused: rows.filter((r) => r.effective_status !== 'ACTIVE').length,
+      active: rows.filter((r) => r.delivering).length,
+      paused: rows.filter((r) => !r.delivering).length,
     }),
     [rows]
   );
@@ -265,7 +270,7 @@ export default function CampaignsPage() {
               {filtered.map((c) => {
                 const daily = c.daily_budget ? Number(c.daily_budget) / 100 : null;
                 const lifetime = c.lifetime_budget ? Number(c.lifetime_budget) / 100 : null;
-                const isActive = c.effective_status === 'ACTIVE';
+                const isActive = !!c.delivering;
                 const campAds = adsByCampaign.get(c.id) || [];
                 const previews = campAds.slice(0, 4);
                 const extra = Math.max(0, campAds.length - 4);
@@ -385,7 +390,7 @@ export default function CampaignsPage() {
                     {filtered.map((c) => {
                       const daily = c.daily_budget ? Number(c.daily_budget) / 100 : null;
                       const lifetime = c.lifetime_budget ? Number(c.lifetime_budget) / 100 : null;
-                      const isActive = c.effective_status === 'ACTIVE';
+                      const isActive = !!c.delivering;
                       return (
                         <tr key={c.id} className="border-t border-[var(--hairline)] hover:bg-[var(--surface)] cursor-pointer" onClick={(e) => {
                           if ((e.target as HTMLElement).closest('button')) return;
