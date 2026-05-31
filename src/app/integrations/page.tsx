@@ -14,7 +14,7 @@ type Integration = {
   channels: string[];
   connected: boolean;
   accounts: number;
-  status: 'connected' | 'soon' | 'error';
+  status: 'connected' | 'soon' | 'error' | 'review';
   error?: string;
 };
 
@@ -76,6 +76,11 @@ export default function IntegrationsPage() {
                         Pronto
                       </span>
                     )}
+                    {it.status === 'review' && (
+                      <span className="px-2.5 py-1 rounded-full text-[10px] uppercase tracking-[0.1em] font-bold bg-[oklch(0.80_0.16_75_/_0.15)] text-[var(--warning)] border border-[oklch(0.80_0.16_75_/_0.4)]">
+                        En revisión
+                      </span>
+                    )}
                   </div>
 
                   {/* Channel chips */}
@@ -119,7 +124,13 @@ export default function IntegrationsPage() {
                   <button
                     onClick={() => {
                       if (it.status === 'soon') return;
-                      push(it.connected ? 'Meta conectado vía System User token' : 'Revisar token en Ajustes → Meta API', it.connected ? 'success' : 'error');
+                      if (it.id === 'tiktok' && it.status === 'review') {
+                        push('TikTok app en revisión. Cuando aprueben, cargar App ID/Secret en env.', 'success');
+                        return;
+                      }
+                      if (it.id === 'meta') {
+                        push(it.connected ? 'Meta conectado vía System User token' : 'Revisar token en Ajustes → Meta API', it.connected ? 'success' : 'error');
+                      }
                     }}
                     disabled={it.status === 'soon'}
                     className={`mt-5 w-full py-2.5 rounded-lg text-sm font-medium transition-all ${
@@ -128,7 +139,9 @@ export default function IntegrationsPage() {
                         : 'btn-glass'
                     }`}
                   >
-                    {it.status === 'soon' ? 'Próximamente' : it.connected ? 'Ver detalles' : 'Conectar'}
+                    {it.status === 'soon' ? 'Próximamente'
+                      : it.status === 'review' ? 'En revisión'
+                      : it.connected ? 'Ver detalles' : 'Conectar'}
                   </button>
                 </article>
               ))}
