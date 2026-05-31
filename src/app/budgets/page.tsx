@@ -17,6 +17,7 @@ type Item = {
   daily_budget?: string;
   lifetime_budget?: string;
   level: 'campaign' | 'adset';
+  delivering?: boolean;
 };
 
 export default function BudgetsPage() {
@@ -58,11 +59,11 @@ export default function BudgetsPage() {
   // "Entregando" = effective_status ACTIVE only. Old paused/expired campaigns
   // (e.g. Leads Mirage 2024) hidden by default — they are NOT delivering.
   const visible = useMemo(
-    () => (onlyDelivering ? items.filter((x) => x.effective_status === 'ACTIVE') : items),
+    () => (onlyDelivering ? items.filter((x) => x.delivering) : items),
     [items, onlyDelivering]
   );
   const deliveringCount = useMemo(
-    () => items.filter((x) => x.effective_status === 'ACTIVE').length,
+    () => items.filter((x) => x.delivering).length,
     [items]
   );
 
