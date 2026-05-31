@@ -655,3 +655,39 @@ export async function getReachEstimate(accountId: string, params: {
     estimate_ready: !!(row?.estimate_ready ?? true),
   };
 }
+
+/* ---------- Lead retrieval (Bitrix bridge) ---------- */
+
+export type LeadgenLead = {
+  id: string;
+  created_time?: string;
+  field_data?: Array<{ name: string; values: string[] }>;
+  campaign_name?: string;
+  form_name?: string;
+};
+
+/** Fetch a single leadgen lead by id (from webhook). field_data = answers. */
+export async function getLeadgenLead(leadgenId: string): Promise<LeadgenLead> {
+  const r = await metaGet(`/${leadgenId}`, {
+    fields: 'id,created_time,field_data,campaign_name,form_name',
+  }, { paginate: false });
+  return (Array.isArray((r as { data?: unknown }).data) ? (r as { data: LeadgenLead[] }).data[0] : r) as LeadgenLead;
+}
+
+/** Normalize Meta field_data into name/phone/email. */
+export function parseLeadFields(lead: LeadgenLead): { name?: string; phone?: string; email?: string; raw: Record<string, string> } {
+  const raw: Record<string, string> = {};
+  for (const f of lead.field_data || []) raw[f.name] = (f.values || [])[0] || '';
+  const find = (keys: string[]) => {
+    for (const k of Object.keys(raw)) {
+      if (keys.some((key) => k.toLowerCase().includes(key))) return raw[k];
+    }
+    return undefined;
+  };
+  return {
+    name: find(['full_name', 'name', 'nombre']),
+    phone: find(['phone', 'tel', 'celular', 'whatsapp']),
+    email: find(['email', 'correo']),
+    raw,
+  };
+}

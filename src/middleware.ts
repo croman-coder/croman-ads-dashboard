@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { verifySessionToken, SESSION_CONFIG } from '@/lib/auth';
 
-const PUBLIC_PATHS = ['/login', '/api/auth/login', '/api/auth/logout', '/api/auth/session'];
+const PUBLIC_PATHS = ['/login', '/api/auth/login', '/api/auth/logout', '/api/auth/session', '/api/webhooks/meta-lead'];
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
