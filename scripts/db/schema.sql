@@ -12,6 +12,12 @@ DO $$ BEGIN
   );
 EXCEPTION WHEN duplicate_object THEN null; END $$;
 
+-- New audience/pixel actions (idempotent ALTER for existing enum)
+DO $$ BEGIN ALTER TYPE proposal_action ADD VALUE IF NOT EXISTS 'create_audience'; EXCEPTION WHEN others THEN null; END $$;
+DO $$ BEGIN ALTER TYPE proposal_action ADD VALUE IF NOT EXISTS 'create_lookalike'; EXCEPTION WHEN others THEN null; END $$;
+DO $$ BEGIN ALTER TYPE proposal_action ADD VALUE IF NOT EXISTS 'upload_customer_list'; EXCEPTION WHEN others THEN null; END $$;
+DO $$ BEGIN ALTER TYPE proposal_action ADD VALUE IF NOT EXISTS 'configure_capi'; EXCEPTION WHEN others THEN null; END $$;
+
 CREATE TABLE IF NOT EXISTS mutation_proposals (
   id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),

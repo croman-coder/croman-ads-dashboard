@@ -1,7 +1,7 @@
 import { sql } from '@vercel/postgres';
 
 export type ProposalStatus = 'pending' | 'approved' | 'rejected' | 'executed' | 'failed' | 'expired';
-export type ProposalAction = 'set_budget' | 'activate' | 'create_campaign' | 'duplicate_campaign';
+export type ProposalAction = 'set_budget' | 'activate' | 'create_campaign' | 'duplicate_campaign' | 'create_audience' | 'create_lookalike' | 'upload_customer_list' | 'configure_capi';
 
 export interface Proposal {
   id: string;

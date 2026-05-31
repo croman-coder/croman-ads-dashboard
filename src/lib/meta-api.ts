@@ -520,3 +520,108 @@ export async function sendCapiEvent(pixelId: string, event: {
   };
   return { events_received: r.events_received || 0, fbtrace_id: r.fbtrace_id };
 }
+
+/* ---------- Custom Audiences + Lookalikes (Phase C/D) ---------- */
+
+export type CustomAudience = {
+  id: string;
+  name: string;
+  subtype: string;
+  approximate_count_lower_bound?: number;
+  approximate_count_upper_bound?: number;
+  delivery_status?: { code: number; description: string };
+  operation_status?: { code: number; description: string };
+  time_created?: string;
+};
+
+export async function listCustomAudiences(accountId: string): Promise<CustomAudience[]> {
+  const id = accountId.startsWith('act_') ? accountId : `act_${accountId}`;
+  const fields = 'id,name,subtype,approximate_count_lower_bound,approximate_count_upper_bound,delivery_status,operation_status,time_created';
+  const r = await metaGet(`/${id}/customaudiences`, { fields, limit: 200 });
+  return (r.data || []) as CustomAudience[];
+}
+
+/** Website (pixel) custom audience. retention_days 1-180. */
+export async function createWebsiteAudience(accountId: string, params: {
+  name: string;
+  pixel_id: string;
+  event?: string;          // e.g. 'ViewContent','Lead','Purchase' (omit = all visitors)
+  retention_days: number;
+}): Promise<{ id: string }> {
+  const acct = accountId.startsWith('act_') ? accountId : `act_${accountId}`;
+  const rule = params.event
+    ? { inclusions: { operator: 'or', rules: [{ event_sources: [{ type: 'pixel', id: params.pixel_id }], retention_seconds: params.retention_days * 86400, filter: { operator: 'and', filters: [{ field: 'event', operator: 'eq', value: params.event }] } }] } }
+    : { inclusions: { operator: 'or', rules: [{ event_sources: [{ type: 'pixel', id: params.pixel_id }], retention_seconds: params.retention_days * 86400 }] } };
+  const r = await metaPost(`/${acct}/customaudiences`, {
+    name: params.name,
+    subtype: 'WEBSITE',
+    rule: JSON.stringify(rule),
+  }) as { id: string };
+  return r;
+}
+
+/** Engagement audience (page/IG/video/leadform). */
+export async function createEngagementAudience(accountId: string, params: {
+  name: string;
+  page_id: string;
+  engagement_type: 'page' | 'ig' | 'video' | 'leadform';
+  retention_days: number;
+}): Promise<{ id: string }> {
+  const acct = accountId.startsWith('act_') ? accountId : `act_${accountId}`;
+  // Engagement source type maps to Meta event_sources type
+  const typeMap = { page: 'page', ig: 'ig_business', video: 'page', leadform: 'lead_gen_form' };
+  const rule = {
+    inclusions: {
+      operator: 'or',
+      rules: [{ event_sources: [{ type: typeMap[params.engagement_type], id: params.page_id }], retention_seconds: params.retention_days * 86400 }],
+    },
+  };
+  const r = await metaPost(`/${acct}/customaudiences`, {
+    name: params.name,
+    subtype: 'ENGAGEMENT',
+    rule: JSON.stringify(rule),
+  }) as { id: string };
+  return r;
+}
+
+/**
+ * Customer list audience. Hashes (SHA256) MUST be provided by caller.
+ * payload.schema e.g. ['EMAIL_SHA256'] or ['PHONE_SHA256'].
+ * payload.data = array of hashed values.
+ */
+export async function createCustomerListAudience(accountId: string, params: {
+  name: string;
+  schema: string;
+  hashed_data: string[];
+}): Promise<{ id: string }> {
+  const acct = accountId.startsWith('act_') ? accountId : `act_${accountId}`;
+  // 1. create empty CUSTOM audience
+  const created = await metaPost(`/${acct}/customaudiences`, {
+    name: params.name,
+    subtype: 'CUSTOM',
+    customer_file_source: 'USER_PROVIDED_ONLY',
+  }) as { id: string };
+  // 2. add users (hashed)
+  await metaPost(`/${created.id}/users`, {
+    payload: JSON.stringify({ schema: [params.schema], data: params.hashed_data.map((h) => [h]) }),
+  });
+  return created;
+}
+
+/** Lookalike from a seed custom audience. ratio 0.01-0.20. country e.g. 'PY'. */
+export async function createLookalike(accountId: string, params: {
+  name: string;
+  origin_audience_id: string;
+  country: string;
+  ratio: number;
+}): Promise<{ id: string }> {
+  const acct = accountId.startsWith('act_') ? accountId : `act_${accountId}`;
+  const spec = { type: 'similarity', country: params.country, ratio: params.ratio };
+  const r = await metaPost(`/${acct}/customaudiences`, {
+    name: params.name,
+    subtype: 'LOOKALIKE',
+    origin_audience_id: params.origin_audience_id,
+    lookalike_spec: JSON.stringify(spec),
+  }) as { id: string };
+  return r;
+}
